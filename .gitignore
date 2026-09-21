@@ -1,0 +1,39 @@
+# ---- LaTeX build files ----
+build/
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+
+# ---- C/C++ build ----
+bin/
+obj/
+*.o
+*.a
+*.so
+*.exe
+
+# ---- Python ----
+__pycache__/
+*.pyc
+.venv/
+
+# ---- Generated audio / results (keep the repo light) ----
+*.wav
+*.flac
+*.mp3
+*.bin
+results/raw/
+
+# ---- OS / editors ----
+.DS_Store
+Thumbs.db
