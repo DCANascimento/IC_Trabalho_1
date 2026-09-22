@@ -14,21 +14,36 @@ if ~isfolder(out_dir)
     mkdir(out_dir);
 end
 
-% menu
+%list available files
+files = dir(fullfile(in_dir, '*.wav'));
+if isempty(files)
+    error("No WAV files found in %s", in_dir);
+end
+names = sort({files.name});
+K = numel(names);
+
 fprintf("=== wav_quant ===\n");
-fprintf("Available files: sample01.wav ... sample08.wav\n\n");
+fprintf("Available files:\n");
+for k = 1:K
+    fprintf("  %2d - %s\n", k, names{k});
+end
+fprintf("\n");
 
-N = read_int("Choose the file (1-8, 0 = all, q = quit [or enter]): ", 0, 8);
+
+
+% menu
+N = read_int(sprintf("Choose the file (1-%d, 0 = all, q = quit [or enter]): ", K), 0, K);
 if isempty(N), disp("Exiting."); return; end
-
+ 
 b = read_int("Number of bits to keep (1-16, q = quit [or enter]): ", 1, 16);
 if isempty(b), disp("Exiting."); return; end
-
+ 
 if N == 0
-    file_list = 1:8;
+    file_list = 1:K;
 else
     file_list = N;
 end
+ 
 
 % processing
 step = 2^(16 - b); % size of each interval
@@ -67,6 +82,7 @@ for n = file_list
     fprintf("  %s -> %s\n", in_name, out_name);
 end
 
+%saving
 fprintf("\nDone. File(s) saved in: %s\n", out_dir);
 
 % helper function
