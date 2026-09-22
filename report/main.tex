@@ -1,51 +1,53 @@
 \documentclass{article}
-\usepackage{graphicx} % Required for inserting images
-\usepackage{float}
+ 
+\usepackage{graphicx}             % imagens
+\usepackage{float}                % posicionamento [H] de figuras e tabelas
 \usepackage[a4paper, margin=2cm]{geometry}
+\usepackage[T1]{fontenc}          % acentos: hifenizacao e pesquisa no PDF
 \usepackage[portuguese]{babel}
-
-\title{IC - Trabalho 1 - Report 1}
-\author{
-  Diogo Nascimento\\
-  \texttt{120031}
-  \and
-  Ana Sofia Almeida\\
-  \texttt{113892}
-  \and
-  Beatriz Saraiva\\
-  \texttt{108944}
+\usepackage{amsmath}              % formulas
+\usepackage{siunitx}              % unidades SI
+\usepackage{booktabs}             % tabelas: \toprule, \midrule, \bottomrule
+\usepackage{multirow}             % celulas que ocupam varias linhas
+\usepackage{listings}             % listagens de codigo
+\usepackage{xcolor}               % cores (usado pelo listings)
+\usepackage[hidelinks]{hyperref}  % \autoref e links no PDF
+ 
+\graphicspath{{figs/}}
+ 
+% ---------- Estilo das listagens de codigo ----------
+\lstset{
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{teal},
+  numbers=left,
+  numberstyle=\tiny,
+  frame=lines,
+  framesep=2mm,
+  breaklines=true,
+  showstringspaces=false
 }
-\date{Setembro 2026}
 
+
+
+ 
 \begin{document}
-
-\maketitle
-
+ 
+\input{chapters/capa}
+ 
 \tableofcontents
-
-
-\vspace{15pt}
-\section{Capitulo}
-\subsection{Sub capitulo}
-
-\textbf{\textit{Texto}} exemplo
-
-\subsection{Sub capitulo 2}
-
-mais texto
-
-dkajshdjkhajksdk
-
-daskjdlkhal
-\subsection{Sub capitulo 3}
-
-\begin{itemize}
-    \item \textbf{Exemplo lista 1} \\
-    Texto 1
-
-    \item \textbf{Exemplo lista 2} \\
-    Texto 2
-    
-\end{itemize}
-
+\newpage
+ 
+\input{chapters/intro}
+\input{chapters/part1}
+%\input{chapters/part2}
+%\input{chapters/part3}
+%\input{chapters/manual}
+%\input{chapters/conclusao}
+%\input{chapters/example}
+ 
+\bibliographystyle{ieeetr}
+\bibliography{bib/references}
+ 
 \end{document}

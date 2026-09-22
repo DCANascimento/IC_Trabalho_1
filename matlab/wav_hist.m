@@ -1,5 +1,11 @@
 
-[audio, freq_amostragem] = audioread("Audio Files/sample01.wav");
+script_dir = fileparts(mfilename('fullpath'));
+root_dir   = fileparts(script_dir);            % raiz do repositório
+in_dir     = fullfile(root_dir, 'AudioFiles');
+
+[audio, freq_amostragem] = audioread(fullfile(in_dir, 'sample01.wav'));
+
+% [audio, freq_amostragem] = audioread("Audio Files/sample01.wav");
 
 % L/R Channels
 L = audio(:, 1);

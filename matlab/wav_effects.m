@@ -17,9 +17,10 @@ clc;
 close all;
 
 % [ADDED] Input/output folders 
-base_dir = fileparts(mfilename('fullpath'));
-in_dir   = fullfile(base_dir, 'AudioFiles');
-out_dir  = fullfile(base_dir, 'EffectsFiles');
+script_dir = fileparts(mfilename('fullpath'));
+root_dir   = fileparts(script_dir);
+in_dir     = fullfile(root_dir, 'AudioFiles');
+out_dir    = fullfile(root_dir, 'EffectsFiles'); 
 
 if ~isfolder(in_dir)
     error('Folder not found: %s', in_dir);

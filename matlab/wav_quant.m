@@ -3,9 +3,10 @@ clear;
 clc;
 
 % dirs
-base_dir = fileparts(mfilename('fullpath'));
-in_dir   = fullfile(base_dir, 'AudioFiles');
-out_dir  = fullfile(base_dir, 'QuantizedFiles');
+script_dir = fileparts(mfilename('fullpath'));
+root_dir   = fileparts(script_dir);
+in_dir     = fullfile(root_dir, 'AudioFiles');
+out_dir    = fullfile(root_dir, 'QuantizedFiles');
 
 if ~isfolder(in_dir)
     error("Folder not found: %s", in_dir);
