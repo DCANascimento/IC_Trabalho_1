@@ -28,7 +28,8 @@ __pycache__/
 .venv/
 
 # ---- Generated audio / results (keep the repo light) ----
-*.wav
+QuantizedFiles/
+EffectsFiles/
 *.flac
 *.mp3
 *.bin
