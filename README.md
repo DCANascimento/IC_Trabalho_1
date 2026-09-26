@@ -42,21 +42,38 @@ sudo apt install build-essential pkg-config libgtk-4-dev
 ```
  
 ## Build
- 
-<!-- ```bash
+
+```bash
 cd Project
 make              # builds wav_hist and wav_app
 make wav_hist     # command-line tool only (no GTK4 needed)
+make wav_quant    # quantization command-line tool only (no GTK4 needed)
 make clean
-``` -->
+```
  
 ## Usage
  
 ```bash
 cd Project
 ./wav_hist "../AudioFiles/sample01.wav"   # histogram of an audio file
+./wav_quant "../AudioFiles/sample01.wav" "../QuantizedFiles/sample01_8b.wav" --bits 8
 ./wav_app                                  # graphical interface
 ```
+
+The command-line quantizer accepts 1 to 16 bits and writes a new 16-bit WAV
+file. Its syntax is:
+
+```bash
+./wav_quant input.wav output.wav --bits N
+```
+
+The graphical application starts with two options: `WAV Histogram` opens the
+existing four-channel histogram view, and `WAV Quantization` opens the
+quantization view. The quantization view accepts between 1 and 16 bits, can
+process one or more selected WAV files, or can process every WAV file in
+`../AudioFiles`. Outputs are written to `Project/QuantizedFiles/` using names
+such as `sample01_8b.wav`. Run the application from the `Project` directory
+when using the all-files action.
  
 The MATLAB scripts are run from the repository root. They list the WAV
 files in the input folder and ask which one to process; results are written
@@ -71,7 +88,8 @@ to a folder created automatically.
 ## Status
  
 - [x] Part I — `wav_hist`
-- [] Part I — `wav_quant`, `wav_cmp`, `wav_effects` (MATLAB prototypes done, C/C++ pending)
+- [x] Part I — `wav_quant` (MATLAB prototype and C/C++ application)
+- [ ] Part I — `wav_cmp`, `wav_effects` (MATLAB prototypes done, C/C++ pending)
 - [ ] Part II — lossless codec
 - [ ] Part III — lossy codec
 - [ ] Part IV — reports
