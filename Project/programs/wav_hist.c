@@ -45,6 +45,12 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    if (audio.num_channels != 2) {
+        printf("Histogram mode requires a stereo WAV file\n");
+        audio_free(&audio);
+        return 1;
+    }
+
 
     /* Create histograms */
 

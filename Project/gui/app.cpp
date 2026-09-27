@@ -10,6 +10,7 @@
 
 extern "C" {
 #include "comparison.h"
+#include "effects.h"
 #include "histogram.h"
 #include "quantization.h"
 #include "wav.h"
@@ -38,6 +39,15 @@ typedef struct {
     GtkWidget *comparison_original_label;
     GtkWidget *comparison_processed_label;
     GtkWidget *comparison_results;
+
+    Audio effects_audio;
+    bool has_effects_audio;
+    std::string effects_input_path;
+    GtkWidget *effects_file_label;
+    GtkWidget *effects_frequency_entry;
+    GtkWidget *effects_depth_entry;
+    GtkWidget *effects_status;
+    GSubprocess *effects_process;
 } AppData;
 
 static GtkWidget *make_page_box()
@@ -99,9 +109,17 @@ static void file_selected(
         return;
     }
 
-    Audio audio = {0};
+    Audio audio = {};
     if (wav_read(filename, &audio) != 0) {
         g_print("Could not read WAV file\n");
+        g_free(filename);
+        g_object_unref(file);
+        return;
+    }
+
+    if (audio.num_channels != 2) {
+        g_print("Histogram mode requires a stereo WAV file\n");
+        audio_free(&audio);
         g_free(filename);
         g_object_unref(file);
         return;
@@ -420,6 +438,225 @@ static GtkWidget *make_comparison_button(
     return button;
 }
 
+static void effects_file_selected(
+    GObject *source_object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+    AppData *app_data = static_cast<AppData *>(user_data);
+    GtkFileDialog *dialog = GTK_FILE_DIALOG(source_object);
+    GError *error = NULL;
+    GFile *file = gtk_file_dialog_open_finish(dialog, result, &error);
+
+    if (file == NULL) {
+        if (error != NULL) {
+            g_error_free(error);
+        }
+        return;
+    }
+
+    char *filename = g_file_get_path(file);
+    if (filename == NULL) {
+        g_object_unref(file);
+        return;
+    }
+
+    Audio audio = {};
+    if (wav_read(filename, &audio) != 0) {
+        gtk_label_set_text(
+            GTK_LABEL(app_data->effects_status),
+            "Could not read file. Select a 16-bit stereo PCM WAV.");
+        g_free(filename);
+        g_object_unref(file);
+        return;
+    }
+
+    if (app_data->has_effects_audio) {
+        audio_free(&app_data->effects_audio);
+    }
+    if (app_data->effects_process != NULL) {
+        g_subprocess_force_exit(app_data->effects_process);
+        g_clear_object(&app_data->effects_process);
+    }
+    app_data->effects_audio = audio;
+    app_data->has_effects_audio = true;
+    app_data->effects_input_path = filename;
+
+    char *basename = g_path_get_basename(filename);
+    std::string label = "Source: ";
+    label += basename;
+    gtk_label_set_text(GTK_LABEL(app_data->effects_file_label), label.c_str());
+    gtk_label_set_text(
+        GTK_LABEL(app_data->effects_status),
+        "Choose an effect to create, save, and play its preview.");
+    g_free(basename);
+    g_free(filename);
+    g_object_unref(file);
+}
+
+static void open_effects_wav(GtkWidget *button, gpointer user_data)
+{
+    (void)button;
+    AppData *app_data = static_cast<AppData *>(user_data);
+    GtkFileDialog *dialog = gtk_file_dialog_new();
+    gtk_file_dialog_set_title(dialog, "Choose source WAV");
+    gtk_file_dialog_open(
+        dialog,
+        app_data->window,
+        NULL,
+        effects_file_selected,
+        app_data);
+}
+
+static std::string effects_output_path(const AppData *app_data, AudioEffect effect)
+{
+    std::string name = app_data->effects_input_path;
+    std::string::size_type slash = name.find_last_of("\\/");
+    name = name.substr(slash == std::string::npos ? 0 : slash + 1);
+    std::string::size_type extension = name.find_last_of('.');
+    if (extension != std::string::npos) {
+        name.erase(extension);
+    }
+    return "EffectsFiles/" + name + "_" + audio_effect_name(effect) + ".wav";
+}
+
+static double effects_entry_value(GtkWidget *entry, double fallback)
+{
+    const char *text = gtk_editable_get_text(GTK_EDITABLE(entry));
+    char *end = NULL;
+    double value = g_ascii_strtod(text, &end);
+    return end == text || *end != '\0' ? fallback : value;
+}
+
+static GSubprocess *start_effect_playback(const char *filename)
+{
+    GError *error = NULL;
+    GSubprocess *process = g_subprocess_new(
+        G_SUBPROCESS_FLAGS_NONE,
+        &error,
+        "paplay",
+        filename,
+        NULL);
+    g_clear_error(&error);
+
+    if (process == NULL) {
+        process = g_subprocess_new(
+            G_SUBPROCESS_FLAGS_NONE,
+            &error,
+            "aplay",
+            "-q",
+            filename,
+            NULL);
+        g_clear_error(&error);
+    }
+
+    if (process == NULL) {
+        process = g_subprocess_new(
+            G_SUBPROCESS_FLAGS_NONE,
+            &error,
+            "ffplay",
+            "-nodisp",
+            "-autoexit",
+            "-loglevel",
+            "error",
+            filename,
+            NULL);
+        g_clear_error(&error);
+    }
+
+    return process;
+}
+
+static gboolean stop_effects_on_close(GtkWindow *window, gpointer user_data)
+{
+    (void)window;
+    AppData *app_data = static_cast<AppData *>(user_data);
+    if (app_data->effects_process != NULL) {
+        g_subprocess_force_exit(app_data->effects_process);
+        g_clear_object(&app_data->effects_process);
+    }
+    return FALSE;
+}
+
+static void play_effect(GtkWidget *button, gpointer user_data)
+{
+    AppData *app_data = static_cast<AppData *>(user_data);
+    AudioEffect effect = (AudioEffect)GPOINTER_TO_INT(
+        g_object_get_data(G_OBJECT(button), "audio-effect"));
+
+    if (!app_data->has_effects_audio) {
+        gtk_label_set_text(
+            GTK_LABEL(app_data->effects_status),
+            "Choose a source WAV before selecting an effect.");
+        return;
+    }
+
+    double frequency = effects_entry_value(app_data->effects_frequency_entry, 5.0);
+    double depth = effects_entry_value(app_data->effects_depth_entry, 5.0);
+    Audio effected = {};
+    char error_message[160];
+
+    if (audio_apply_effect(
+            &app_data->effects_audio,
+            &effected,
+            effect,
+            frequency,
+            depth,
+            error_message,
+            sizeof(error_message)) != 0) {
+        gtk_label_set_text(
+            GTK_LABEL(app_data->effects_status), error_message);
+        return;
+    }
+
+    g_mkdir_with_parents("EffectsFiles", 0755);
+    std::string output = effects_output_path(app_data, effect);
+    if (audio_effect_write_wav(output.c_str(), &effected) != 0) {
+        gtk_label_set_text(
+            GTK_LABEL(app_data->effects_status),
+            "Could not save the effected WAV file.");
+        audio_free(&effected);
+        return;
+    }
+    audio_free(&effected);
+
+    if (app_data->effects_process != NULL) {
+        g_subprocess_force_exit(app_data->effects_process);
+        g_clear_object(&app_data->effects_process);
+    }
+    char *absolute_path = g_canonicalize_filename(output.c_str(), NULL);
+    app_data->effects_process = start_effect_playback(absolute_path);
+
+    std::string status = "Playing ";
+    status += audio_effect_name(effect);
+    if (app_data->effects_process == NULL) {
+        status = "Effect saved, but no player was found. Install paplay, aplay, or ffplay. Saved to ";
+    } else {
+        status += "; saved to ";
+    }
+    status += output;
+    gtk_label_set_text(GTK_LABEL(app_data->effects_status), status.c_str());
+    g_free(absolute_path);
+}
+
+static GtkWidget *make_effect_button(
+    const char *label,
+    AudioEffect effect,
+    AppData *app_data)
+{
+    GtkWidget *button = gtk_button_new();
+    GtkWidget *content = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    GtkWidget *icon = gtk_image_new_from_icon_name("audio-volume-high-symbolic");
+    gtk_box_append(GTK_BOX(content), icon);
+    gtk_box_append(GTK_BOX(content), gtk_label_new(label));
+    gtk_button_set_child(GTK_BUTTON(button), content);
+    gtk_widget_set_tooltip_text(button, "Generate and play this effect");
+    g_object_set_data(
+        G_OBJECT(button), "audio-effect", GINT_TO_POINTER(effect));
+    g_signal_connect(button, "clicked", G_CALLBACK(play_effect), app_data);
+    return button;
+}
+
 static GtkWidget *create_home_page(AppData *app_data)
 {
     GtkWidget *box = make_page_box();
@@ -428,18 +665,23 @@ static GtkWidget *create_home_page(AppData *app_data)
     GtkWidget *histogram = gtk_button_new_with_label("WAV Histogram");
     GtkWidget *quantization = gtk_button_new_with_label("WAV Quantization");
     GtkWidget *comparison = gtk_button_new_with_label("WAV Comparison");
+    GtkWidget *effects = gtk_button_new_with_label("WAV Effects");
     gtk_widget_set_size_request(histogram, 260, 50);
     gtk_widget_set_size_request(quantization, 260, 50);
     gtk_widget_set_size_request(comparison, 260, 50);
+    gtk_widget_set_size_request(effects, 260, 50);
     g_object_set_data(G_OBJECT(histogram), "stack", app_data->stack);
     g_object_set_data(G_OBJECT(quantization), "stack", app_data->stack);
     g_object_set_data(G_OBJECT(comparison), "stack", app_data->stack);
+    g_object_set_data(G_OBJECT(effects), "stack", app_data->stack);
     g_signal_connect(histogram, "clicked", G_CALLBACK(show_page), (gpointer)"histogram");
     g_signal_connect(quantization, "clicked", G_CALLBACK(show_page), (gpointer)"quantization");
     g_signal_connect(comparison, "clicked", G_CALLBACK(show_page), (gpointer)"comparison");
+    g_signal_connect(effects, "clicked", G_CALLBACK(show_page), (gpointer)"effects");
     gtk_box_append(GTK_BOX(box), histogram);
     gtk_box_append(GTK_BOX(box), quantization);
     gtk_box_append(GTK_BOX(box), comparison);
+    gtk_box_append(GTK_BOX(box), effects);
     return box;
 }
 
@@ -532,6 +774,57 @@ static GtkWidget *create_comparison_page(AppData *app_data)
     return box;
 }
 
+static GtkWidget *create_effects_page(AppData *app_data)
+{
+    GtkWidget *box = make_page_box();
+    gtk_box_append(GTK_BOX(box), make_back_button(app_data->stack));
+
+    GtkWidget *controls = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_box_append(GTK_BOX(controls), gtk_button_new_with_label("Choose source WAV"));
+    GtkWidget *open = gtk_widget_get_last_child(controls);
+    g_signal_connect(open, "clicked", G_CALLBACK(open_effects_wav), app_data);
+    gtk_box_append(GTK_BOX(box), controls);
+
+    app_data->effects_file_label = gtk_label_new("Source: not selected");
+    gtk_label_set_xalign(GTK_LABEL(app_data->effects_file_label), 0.0f);
+    gtk_box_append(GTK_BOX(box), app_data->effects_file_label);
+
+    GtkWidget *parameters = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_box_append(GTK_BOX(parameters), gtk_label_new("Frequency (Hz):"));
+    app_data->effects_frequency_entry = gtk_entry_new();
+    gtk_editable_set_text(GTK_EDITABLE(app_data->effects_frequency_entry), "1");
+    gtk_widget_set_size_request(app_data->effects_frequency_entry, 80, -1);
+    gtk_box_append(GTK_BOX(parameters), app_data->effects_frequency_entry);
+    gtk_box_append(GTK_BOX(parameters), gtk_label_new("Vibrato depth (ms):"));
+    app_data->effects_depth_entry = gtk_entry_new();
+    gtk_editable_set_text(GTK_EDITABLE(app_data->effects_depth_entry), "5");
+    gtk_widget_set_size_request(app_data->effects_depth_entry, 80, -1);
+    gtk_box_append(GTK_BOX(parameters), app_data->effects_depth_entry);
+    gtk_box_append(GTK_BOX(box), parameters);
+
+    GtkWidget *grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 8);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 8);
+    const char *labels[] = {
+        "Echo 1", "Echo 2", "Echo 3", "Multiple echo (feedforward)",
+        "Multiple echo (feedback)", "AM", "Tremolo", "Vibrato",
+        "Chorus", "Flanger", "Doppler"
+    };
+    for (int index = 0; index < 11; index++) {
+        GtkWidget *button = make_effect_button(
+            labels[index], (AudioEffect)(index + 1), app_data);
+        gtk_grid_attach(GTK_GRID(grid), button, index % 3, index / 3, 1, 1);
+    }
+    gtk_box_append(GTK_BOX(box), grid);
+
+    app_data->effects_status = gtk_label_new(
+        "Select a source WAV, then click an effect to generate and play it.");
+    gtk_label_set_xalign(GTK_LABEL(app_data->effects_status), 0.0f);
+    gtk_label_set_wrap(GTK_LABEL(app_data->effects_status), TRUE);
+    gtk_box_append(GTK_BOX(box), app_data->effects_status);
+    return box;
+}
+
 static void activate(GtkApplication *app, gpointer user_data)
 {
     (void)user_data;
@@ -543,11 +836,19 @@ static void activate(GtkApplication *app, gpointer user_data)
     app_data->window = GTK_WINDOW(window);
     app_data->stack = GTK_STACK(gtk_stack_new());
     app_data->has_histograms = false;
+    app_data->has_effects_audio = false;
+    app_data->effects_process = NULL;
+    g_signal_connect(
+        window,
+        "close-request",
+        G_CALLBACK(stop_effects_on_close),
+        app_data);
 
     gtk_stack_add_named(app_data->stack, create_home_page(app_data), "home");
     gtk_stack_add_named(app_data->stack, create_histogram_page(app_data), "histogram");
     gtk_stack_add_named(app_data->stack, create_quantization_page(app_data), "quantization");
     gtk_stack_add_named(app_data->stack, create_comparison_page(app_data), "comparison");
+    gtk_stack_add_named(app_data->stack, create_effects_page(app_data), "effects");
     gtk_stack_set_visible_child_name(app_data->stack, "home");
     gtk_window_set_child(GTK_WINDOW(window), GTK_WIDGET(app_data->stack));
     gtk_window_present(GTK_WINDOW(window));

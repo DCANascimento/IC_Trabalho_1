@@ -50,8 +50,9 @@ int wav_read(const char *filename, Audio *audio)
     fread(data, 1, 4, file);
     fread(&data_size, 4, 1, file);
 
-    if (num_channels != 2 || bits_per_sample != 16) {
-        printf("Only 16-bit stereo WAV files are supported\n");
+    if ((num_channels != 1 && num_channels != 2) ||
+        audio_format != 1 || bits_per_sample != 16) {
+        printf("Only 16-bit mono or stereo PCM WAV files are supported\n");
         fclose(file);
         return 1;
     }
