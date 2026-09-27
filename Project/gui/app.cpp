@@ -4,9 +4,12 @@
 #include <gtk/gtk.h>
 
 #include <cstdlib>
+#include <iomanip>
+#include <sstream>
 #include <string>
 
 extern "C" {
+#include "comparison.h"
 #include "histogram.h"
 #include "quantization.h"
 #include "wav.h"
@@ -29,6 +32,12 @@ typedef struct {
 
     GtkWidget *quantization_bits_entry;
     GtkWidget *quantization_status;
+
+    std::string comparison_original_path;
+    std::string comparison_processed_path;
+    GtkWidget *comparison_original_label;
+    GtkWidget *comparison_processed_label;
+    GtkWidget *comparison_results;
 } AppData;
 
 static GtkWidget *make_page_box()
@@ -282,6 +291,135 @@ static void quantize_all_wavs(GtkWidget *button, gpointer user_data)
     g_list_free_full(filenames, g_free);
 }
 
+static void display_comparison_results(AppData *app_data)
+{
+    AudioComparison comparison;
+    char error_message[160];
+
+    if (compare_wav_files(
+            app_data->comparison_original_path.c_str(),
+            app_data->comparison_processed_path.c_str(),
+            &comparison,
+            error_message,
+            sizeof(error_message)) != 0) {
+        gtk_label_set_text(
+            GTK_LABEL(app_data->comparison_results), error_message);
+        return;
+    }
+
+    std::ostringstream text;
+    text << std::fixed;
+
+    for (int channel = 0; channel < comparison.num_channels; channel++) {
+        text << std::setprecision(0) << "Channel " << channel + 1 << '\n'
+             << std::setprecision(10)
+             << "  MSE: " << comparison.channels[channel].mse << '\n'
+             << "  Maximum absolute error: "
+             << comparison.channels[channel].max_error << '\n'
+             << std::setprecision(2)
+             << "  SNR: " << comparison.channels[channel].snr_db
+             << " dB\n\n";
+    }
+
+    text << "Channel average\n"
+         << std::setprecision(10)
+         << "  Average MSE: " << comparison.average.mse << '\n'
+         << "  Average maximum absolute error: "
+         << comparison.average.max_error << '\n'
+         << std::setprecision(2)
+         << "  Average SNR: " << comparison.average.snr_db << " dB";
+
+    gtk_label_set_text(
+        GTK_LABEL(app_data->comparison_results), text.str().c_str());
+}
+
+static void comparison_file_selected(
+    GObject *source_object,
+    GAsyncResult *result,
+    gpointer user_data)
+{
+    AppData *app_data = static_cast<AppData *>(user_data);
+    GtkFileDialog *dialog = GTK_FILE_DIALOG(source_object);
+    GError *error = NULL;
+    GFile *file = gtk_file_dialog_open_finish(dialog, result, &error);
+
+    if (file == NULL) {
+        if (error != NULL) {
+            g_error_free(error);
+        }
+        return;
+    }
+
+    char *filename = g_file_get_path(file);
+    if (filename == NULL) {
+        g_object_unref(file);
+        return;
+    }
+
+    gboolean original = GPOINTER_TO_INT(
+        g_object_get_data(G_OBJECT(dialog), "comparison-original"));
+    std::string *path = original
+        ? &app_data->comparison_original_path
+        : &app_data->comparison_processed_path;
+    GtkWidget *label = original
+        ? app_data->comparison_original_label
+        : app_data->comparison_processed_label;
+    *path = filename;
+
+    char *basename = g_path_get_basename(filename);
+    std::string label_text = original ? "Original: " : "Quantized: ";
+    label_text += basename;
+    gtk_label_set_text(GTK_LABEL(label), label_text.c_str());
+    g_free(basename);
+
+    if (!app_data->comparison_original_path.empty() &&
+        !app_data->comparison_processed_path.empty()) {
+        display_comparison_results(app_data);
+    }
+
+    g_free(filename);
+    g_object_unref(file);
+}
+
+static void open_comparison_file(GtkWidget *button, gpointer user_data)
+{
+    AppData *app_data = static_cast<AppData *>(user_data);
+    gboolean original = GPOINTER_TO_INT(
+        g_object_get_data(G_OBJECT(button), "comparison-original"));
+    GtkFileDialog *dialog = gtk_file_dialog_new();
+    gtk_file_dialog_set_title(
+        dialog,
+        original ? "Choose original WAV" : "Choose quantized WAV");
+    g_object_set_data(
+        G_OBJECT(dialog),
+        "comparison-original",
+        GINT_TO_POINTER(original));
+    gtk_file_dialog_open(
+        dialog,
+        app_data->window,
+        NULL,
+        comparison_file_selected,
+        app_data);
+}
+
+static GtkWidget *make_comparison_button(
+    const char *title,
+    gboolean original,
+    AppData *app_data)
+{
+    GtkWidget *button = gtk_button_new_with_label(title);
+    g_object_set_data(
+        G_OBJECT(button),
+        "comparison-original",
+        GINT_TO_POINTER(original));
+    g_signal_connect(
+        button,
+        "clicked",
+        G_CALLBACK(open_comparison_file),
+        app_data);
+    return button;
+}
+
 static GtkWidget *create_home_page(AppData *app_data)
 {
     GtkWidget *box = make_page_box();
@@ -289,14 +427,19 @@ static GtkWidget *create_home_page(AppData *app_data)
 
     GtkWidget *histogram = gtk_button_new_with_label("WAV Histogram");
     GtkWidget *quantization = gtk_button_new_with_label("WAV Quantization");
+    GtkWidget *comparison = gtk_button_new_with_label("WAV Comparison");
     gtk_widget_set_size_request(histogram, 260, 50);
     gtk_widget_set_size_request(quantization, 260, 50);
+    gtk_widget_set_size_request(comparison, 260, 50);
     g_object_set_data(G_OBJECT(histogram), "stack", app_data->stack);
     g_object_set_data(G_OBJECT(quantization), "stack", app_data->stack);
+    g_object_set_data(G_OBJECT(comparison), "stack", app_data->stack);
     g_signal_connect(histogram, "clicked", G_CALLBACK(show_page), (gpointer)"histogram");
     g_signal_connect(quantization, "clicked", G_CALLBACK(show_page), (gpointer)"quantization");
+    g_signal_connect(comparison, "clicked", G_CALLBACK(show_page), (gpointer)"comparison");
     gtk_box_append(GTK_BOX(box), histogram);
     gtk_box_append(GTK_BOX(box), quantization);
+    gtk_box_append(GTK_BOX(box), comparison);
     return box;
 }
 
@@ -360,6 +503,35 @@ static GtkWidget *create_quantization_page(AppData *app_data)
     return box;
 }
 
+static GtkWidget *create_comparison_page(AppData *app_data)
+{
+    GtkWidget *box = make_page_box();
+    gtk_box_append(GTK_BOX(box), make_back_button(app_data->stack));
+    gtk_box_append(GTK_BOX(box), gtk_label_new("Compare WAV files"));
+
+    gtk_box_append(
+        GTK_BOX(box),
+        make_comparison_button("Choose original WAV", TRUE, app_data));
+    app_data->comparison_original_label = gtk_label_new("Original: not selected");
+    gtk_label_set_xalign(GTK_LABEL(app_data->comparison_original_label), 0.0f);
+    gtk_box_append(GTK_BOX(box), app_data->comparison_original_label);
+
+    gtk_box_append(
+        GTK_BOX(box),
+        make_comparison_button("Choose quantized WAV", FALSE, app_data));
+    app_data->comparison_processed_label = gtk_label_new("Quantized: not selected");
+    gtk_label_set_xalign(GTK_LABEL(app_data->comparison_processed_label), 0.0f);
+    gtk_box_append(GTK_BOX(box), app_data->comparison_processed_label);
+
+    app_data->comparison_results = gtk_label_new(
+        "Select both WAV files to calculate channel statistics.");
+    gtk_label_set_xalign(GTK_LABEL(app_data->comparison_results), 0.0f);
+    gtk_label_set_selectable(GTK_LABEL(app_data->comparison_results), TRUE);
+    gtk_label_set_wrap(GTK_LABEL(app_data->comparison_results), TRUE);
+    gtk_box_append(GTK_BOX(box), app_data->comparison_results);
+    return box;
+}
+
 static void activate(GtkApplication *app, gpointer user_data)
 {
     (void)user_data;
@@ -375,6 +547,7 @@ static void activate(GtkApplication *app, gpointer user_data)
     gtk_stack_add_named(app_data->stack, create_home_page(app_data), "home");
     gtk_stack_add_named(app_data->stack, create_histogram_page(app_data), "histogram");
     gtk_stack_add_named(app_data->stack, create_quantization_page(app_data), "quantization");
+    gtk_stack_add_named(app_data->stack, create_comparison_page(app_data), "comparison");
     gtk_stack_set_visible_child_name(app_data->stack, "home");
     gtk_window_set_child(GTK_WINDOW(window), GTK_WIDGET(app_data->stack));
     gtk_window_present(GTK_WINDOW(window));

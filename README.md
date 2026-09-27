@@ -48,6 +48,7 @@ cd Project
 make              # builds wav_hist and wav_app
 make wav_hist     # command-line tool only (no GTK4 needed)
 make wav_quant    # quantization command-line tool only (no GTK4 needed)
+make wav_cmp      # comparison command-line tool only (no GTK4 needed)
 make clean
 ```
  
@@ -57,6 +58,7 @@ make clean
 cd Project
 ./wav_hist "../AudioFiles/sample01.wav"   # histogram of an audio file
 ./wav_quant "../AudioFiles/sample01.wav" "../QuantizedFiles/sample01_8b.wav" --bits 8
+./wav_cmp "../AudioFiles/sample01.wav" "QuantizedFiles/sample01_8b.wav"
 ./wav_app                                  # graphical interface
 ```
 
@@ -67,13 +69,22 @@ file. Its syntax is:
 ./wav_quant input.wav output.wav --bits N
 ```
 
-The graphical application starts with two options: `WAV Histogram` opens the
-existing four-channel histogram view, and `WAV Quantization` opens the
-quantization view. The quantization view accepts between 1 and 16 bits, can
-process one or more selected WAV files, or can process every WAV file in
-`../AudioFiles`. Outputs are written to `Project/QuantizedFiles/` using names
-such as `sample01_8b.wav`. Run the application from the `Project` directory
-when using the all-files action.
+The comparison command accepts an original WAV and a quantized WAV, then
+prints per-channel MSE, maximum absolute error, and SNR, followed by the
+arithmetic average of each statistic across channels:
+
+```bash
+./wav_cmp original.wav quantized.wav
+```
+
+The graphical application starts with three options: `WAV Histogram` opens the
+existing four-channel histogram view, `WAV Quantization` opens the quantization
+view, and `WAV Comparison` lets you select an original and quantized WAV and
+displays the same comparison statistics. The quantization view accepts between
+1 and 16 bits, can process one or more selected WAV files, or can process every
+WAV file in `../AudioFiles`. Outputs are written to `Project/QuantizedFiles/`
+using names such as `sample01_8b.wav`. Run the application from the `Project`
+directory when using the all-files action.
  
 The MATLAB scripts are run from the repository root. They list the WAV
 files in the input folder and ask which one to process; results are written
@@ -83,13 +94,15 @@ to a folder created automatically.
 |---|---|---|
 | `wav_hist.m` | Histograms of the L, R, MID and SIDE channels | — |
 | `wav_quant.m` | Uniform scalar quantization (bit reduction) | `QuantizedFiles/` |
+| `wav_cmp.m` | Compare original and quantized WAV statistics | — |
 | `wav_effects.m` | Echo, amplitude modulation, time-varying delays | `EffectsFiles/` |
  
 ## Status
  
 - [x] Part I — `wav_hist`
 - [x] Part I — `wav_quant` (MATLAB prototype and C/C++ application)
-- [ ] Part I — `wav_cmp`, `wav_effects` (MATLAB prototypes done, C/C++ pending)
+- [x] Part I — `wav_cmp` (MATLAB prototype and C/C++ application)
+- [ ] Part I — `wav_effects` (MATLAB prototype done, C/C++ pending)
 - [ ] Part II — lossless codec
 - [ ] Part III — lossy codec
 - [ ] Part IV — reports
