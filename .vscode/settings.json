@@ -1,17 +1,53 @@
 {
+  "workbench.colorTheme": "Dark+",
+  "workbench.preferredHighContrastColorTheme": "Visual Studio Dark",
+
+  "liveServer.settings.donotShowInfoMsg": true,
+
   "latex-workshop.latex.outDir": "%DIR%/build",
   "latex-workshop.latex.autoBuild.run": "onSave",
+
   "latex-workshop.view.pdf.viewer": "tab",
+
   "latex-workshop.latex.recipe.default": "latexmk (latexmkrc)",
+
   "latex-workshop.latex.recipes": [
-    { "name": "latexmk (latexmkrc)", "tools": ["latexmk"] }
+    {
+      "name": "latexmk (latexmkrc)",
+      "tools": [
+        "latexmk"
+      ]
+    }
   ],
+
   "latex-workshop.latex.tools": [
     {
       "name": "latexmk",
       "command": "latexmk",
-      "args": ["-synctex=1", "-interaction=nonstopmode", "-file-line-error", "-pdf", "-outdir=%OUTDIR%", "%DOC%"]
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "-pdf",
+        "-shell-escape",
+        "-outdir=%OUTDIR%",
+        "%DOC%"
+      ]
     }
   ],
-  "files.exclude": { "**/build": true }
+
+  "latex-workshop.synctex.synctexjs.enabled": true,
+  "latex-workshop.synctex.afterBuild.enabled": true,
+
+  "files.exclude": {
+    "**/build": true
+  },
+
+  "editor.rulers": [
+    80
+  ],
+  "editor.wordWrap": "wordWrapColumn",
+  "editor.wordWrapColumn": 80,
+  "editor.minimap.enabled": false,
+  "explorer.confirmDelete": false
 }

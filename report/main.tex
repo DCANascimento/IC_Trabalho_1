@@ -1,10 +1,10 @@
-\documentclass{article}
+\documentclass{report}
  
 \usepackage{graphicx}             % imagens
 \usepackage{float}                % posicionamento [H] de figuras e tabelas
 \usepackage[a4paper, margin=2cm]{geometry}
 \usepackage[T1]{fontenc}          % acentos: hifenizacao e pesquisa no PDF
-\usepackage[portuguese]{babel}
+\usepackage[english]{babel}
 \usepackage{amsmath}              % formulas
 \usepackage{siunitx}              % unidades SI
 \usepackage{booktabs}             % tabelas: \toprule, \midrule, \bottomrule
@@ -13,6 +13,14 @@
 \usepackage{xcolor}               % cores (usado pelo listings)
 \usepackage[hidelinks]{hyperref}  % \autoref e links no PDF
  
+\usepackage[explicit,compact]{titlesec}
+
+\titleformat{\chapter}[block]
+  {\bfseries\huge}
+  {}
+  {0pt}
+  {\huge\filright #1}
+
 \graphicspath{{figs/}}
  
 % ---------- Estilo das listagens de codigo ----------
@@ -41,11 +49,10 @@
  
 \input{chapters/intro}
 \input{chapters/part1}
-%\input{chapters/part2}
-%\input{chapters/part3}
-%\input{chapters/manual}
-%\input{chapters/conclusao}
-%\input{chapters/example}
+\input{chapters/part2}
+\input{chapters/part3}
+\input{chapters/manual}
+\input{chapters/conclusao}
  
 \bibliographystyle{ieeetr}
 \bibliography{bib/references}
