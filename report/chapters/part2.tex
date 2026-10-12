@@ -1,23 +1,27 @@
 \chapter{Part II - Lossless Audio Codec}
 
-Moving to the codecs, the \textbf{\textit{Lossless Audio Codec}} is
+Moving to the codecs, the \textbf{\textit{Lossless Audio Codec}} is a program that takes an audio file and compresses it, to as small of a size as possible, while making all the information in the original recoverable through decompression.
 
 
 
 This part of the work was split into a few submodules:
 
 \begin{itemize}
-    \item \textbf{}
+    \item \textbf{wav.cpp} is where we take a raw audio wav file and extract the audio samples into a separate vector.
     
-    \item \textbf{}
+    \item \textbf{predictor.cpp} takes the raw vector and through residual calculation it reduces the space required to store the data.
      
-    \item \textbf{}
+    \item \textbf{zigzag.cpp} applies the zigzag method to convert signed integers into unsigned integers.
     
-    \item \textbf{}
+    \item \textbf{rice.cpp}
 \end{itemize}
 
+
+
 \vspace{10pt}
-\section{Submodule 1}
+\section{WAV Reading}
+
+This was the simpler part of the pipeline, since we had already done this in the previous part. We took the 
 
 \vspace{10pt}
 \section{Submodule 2}

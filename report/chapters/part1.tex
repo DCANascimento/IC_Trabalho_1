@@ -3,23 +3,67 @@
 For the first part, we started by learning the intricacies of audio waveform manipulation by creating some simple files. These include:
 
 \begin{itemize}
-    \item \texttt{wav\char`_hist}
+    \item \texttt{wav\char`_hist:} Given an audio wav file, this program displays an histograms for various of its channels.
 
-    \item \texttt{wav\char`_quant}
+    \item \texttt{wav\char`_quant:} This program takes an audio file and creates a new version that uses less bits (through quantization)
 
-    \item \texttt{wav\char`_cmp}
+    \item \texttt{wav\char`_cmp:} This program takes a quantized audio and it s original form, and compares them using metrics like
 
-    \item \texttt{wav\char`_effects}
+    \item \texttt{wav\char`_effects:} After choosing an audio file, this last program gives a selection of audio effect options, applies them to the given audio and plays them.
+\end{itemize}
+
+We began the project by testing operations on the audio wav files by using matlab, since we were more used to it, and it helped us get a better understanding of the audio format. Afterwards, we decided to take our matlab implementations and convert them to C, since our priority was processing times, we wanted a language that gave us more direct control over memory allocation. However, by the end, we translated the code done to C++, since it was simpler to work with, gave us similar performance results, and simplified the whole project, since for the codecs later on C++ was the language we already started with.
+
+The main function files are in the /src folder, while the execution files that are ran in the terminal exist in the /programs folder.
+
+We have also measured the average runtime of each module by using
+
+\vspace{10pt}
+\section{Reading/Writing a WAV}
+
+In the first step, we immediately encountered a major difference between matlab and C. In matlab there are functions that automatically extract the data from the wav in an array with 2 rows, each one already representing a channel, while in C, all that we get is a byte array, so we have to extract the relevant chunks:
+
+\begin{enumerate}
+
+    \item \textbf{RIFF:} Identifying by the RIFF header lets us extract the size of the file. The header is a 12 byte array where the first 4 bytes represent its RIFF ID, the next four are the file size, and the last 4 are a WAVE ID. This wouldn't be used now, but would be useful for the later codecs.
+
+    \item \textbf{FMT:} The FMT chunk is the first important part, since it gives us important metadata such as the number of channels, the sample rate and the bits per sample (to ensure its 16-bit).
+    
+    \item \textbf{DATA:} The data chunk tells us the total size of the data. With it we can calculate the total number of samples, and allocate memory accordingly.
+
+\end{enumerate}
+
+
+
+Average run times:
+
+\begin{itemize}
+
+    \item \textbf{4 width bin:}
+    
+    \item \textbf{8 width bin:}
+    
+    \item \textbf{12 width bin:}
+
 \end{itemize}
 
 \vspace{10pt}
-\section{WAV Histograms}
+\section{Plotting Histograms}
 
 \vspace{10pt}
-\section{WAV Quantization}
+\section{Audio Quantization}
+
+For the quantization of a given audio file, we choose a value between 1 and 16 bits (16 bits is the original format, while 1 is the bare minimum). Then taking the number of bits selected and the total number of samples, we can calculate the total expected size of the new quantized audio array and, one by one, calculate the quantized value of each sample by rounding the value of said sample down.
+
+However, for this part of the project, since we end up writing the wav files using a 16 bit representation, independent of any quantization done, the actual size of the new file is actually the same.
+
+For the WAV writing part, we simply do the reverse of the reader. We create the RIFF header (RIFF ID + file size + WAVE ID), we recreate the FMT chunk and the DATA chunk (which in theory have the same values, since the only modification done was to the data size in the DATA chunk, which was then reverted).
 
 \vspace{10pt}
-\section{WAV Comparison}
+\section{Comparing Audios}
+
+To compare an audio file to its quantized form, we take both audio and start by checking if they share relevant parameters, like number of channels, number of samples and sample rate. After ensuring this, we calculate the mean squared error (by suming every squared error of each sample pair, and diving by the number of pairs being compared), the signal power sum ()
 
 \vspace{10pt}
-\section{WAV Effects}
+\section{Audio Effects}
+

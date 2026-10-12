@@ -61,7 +61,7 @@ make clean
 cd Project
 ./wav_hist "../AudioFiles/sample01.wav"   # histogram of an audio file
 ./wav_quant "../AudioFiles/sample01.wav" "../QuantizedFiles/sample01_8b.wav" --bits 8
-./wav_cmp "../AudioFiles/sample01.wav" "QuantizedFiles/sample01_8b.wav"
+./wav_cmp "../AudioFiles/sample01.wav" "../QuantizedFiles/sample01_8b.wav"
 ./wav_effects
 ./wav_app                                  # graphical interface
 ```
