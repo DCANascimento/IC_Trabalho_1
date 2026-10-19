@@ -16,8 +16,6 @@ We began the project by testing operations on the audio wav files by using matla
 
 The main function files are in the /src folder, while the execution files that are ran in the terminal exist in the /programs folder.
 
-We have also measured the average runtime of each module by using
-
 \vspace{10pt}
 \section{Reading/Writing a WAV}
 
@@ -29,23 +27,9 @@ In the first step, we immediately encountered a major difference between matlab 
 
     \item \textbf{FMT:} The FMT chunk is the first important part, since it gives us important metadata such as the number of channels, the sample rate and the bits per sample (to ensure its 16-bit).
     
-    \item \textbf{DATA:} The data chunk tells us the total size of the data. With it we can calculate the total number of samples, and allocate memory accordingly.
+    \item \textbf{DATA:} The data chunk tells us the total size of the data. With it we can calculate the total number of samples, and allocate memory accordingly. It is also in it that we have the actual PCM audio samples that we will work with.
 
 \end{enumerate}
-
-
-
-Average run times:
-
-\begin{itemize}
-
-    \item \textbf{4 width bin:}
-    
-    \item \textbf{8 width bin:}
-    
-    \item \textbf{12 width bin:}
-
-\end{itemize}
 
 \vspace{10pt}
 \section{Plotting Histograms}
@@ -62,7 +46,7 @@ For the WAV writing part, we simply do the reverse of the reader. We create the 
 \vspace{10pt}
 \section{Comparing Audios}
 
-To compare an audio file to its quantized form, we take both audio and start by checking if they share relevant parameters, like number of channels, number of samples and sample rate. After ensuring this, we calculate the mean squared error (by suming every squared error of each sample pair, and diving by the number of pairs being compared), the signal power sum ()
+To compare an audio file to its quantized form, we take both audio and start by checking if they share relevant parameters, like number of channels, number of samples and sample rate. After ensuring this, we calculate the mean squared error (by suming every squared error of each sample pair, and diving by the number of pairs being compared), the signal power sum (...) (Note: are formulas necessary?)
 
 \vspace{10pt}
 \section{Audio Effects}

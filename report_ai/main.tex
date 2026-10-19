@@ -1,0 +1,62 @@
+\documentclass{report}
+ 
+\usepackage{graphicx}             % imagens
+\usepackage{float}                % posicionamento [H] de figuras e tabelas
+\usepackage[a4paper, margin=2cm]{geometry}
+\usepackage[T1]{fontenc}          % acentos: hifenizacao e pesquisa no PDF
+\usepackage[english]{babel}
+\usepackage{amsmath}              % formulas
+\usepackage{siunitx}              % unidades SI
+\usepackage{booktabs}             % tabelas: \toprule, \midrule, \bottomrule
+\usepackage{multirow}             % celulas que ocupam varias linhas
+\usepackage{listings}             % listagens de codigo
+\usepackage{xcolor}               % cores (usado pelo listings)
+\usepackage[hidelinks]{hyperref}  % \autoref e links no PDF
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+ 
+\usepackage[explicit,compact]{titlesec}
+
+\titleformat{\chapter}[block]
+  {\bfseries\huge}
+  {}
+  {0pt}
+  {\huge\filright #1}
+
+\graphicspath{{figs/}}
+ 
+% ---------- Estilo das listagens de codigo ----------
+\lstset{
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{teal},
+  numbers=left,
+  numberstyle=\tiny,
+  frame=lines,
+  framesep=2mm,
+  breaklines=true,
+  showstringspaces=false
+}
+
+
+
+ 
+\begin{document}
+ 
+\input{chapters/capa}
+ 
+\tableofcontents
+\newpage
+ 
+\input{chapters/intro}
+\input{chapters/code_gen}
+\input{chapters/sota_research}
+\input{chapters/report_correction}
+\input{chapters/conclusao}
+ 
+\bibliographystyle{ieeetr}
+\bibliography{bib/references}
+ 
+\end{document}

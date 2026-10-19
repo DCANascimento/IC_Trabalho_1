@@ -1,1 +1,79 @@
 \chapter{Manual - How to Run}
+
+This project was developed for Ubuntu/Debian-based systems.
+Before running any scripts, ensure that the following dependencies
+are installed:
+
+\begin{itemize}
+    \item \texttt{gcc} / \texttt{g++} (C11 and C++17 support)
+    \item \texttt{make} and \texttt{pkg-config}
+    \item GTK4 (\texttt{libgtk-4-dev}), required only for the graphical interface
+    \item At least one audio player: \texttt{paplay} or \texttt{aplay}
+    for GUI and terminal playback; \texttt{ffplay} is an additional
+    fallback for the GUI
+    \item MATLAB, required only for the \texttt{.m} prototypes
+\end{itemize}
+
+Most of the required dependencies can be installed using the following
+command:
+
+\begin{verbatim}
+sudo apt update
+sudo apt install build-essential make pkg-config libgtk-4-dev \
+    pulseaudio-utils alsa-utils ffmpeg
+\end{verbatim}
+
+\section{Building the Project}
+
+To build the exercises in Part 1, open a terminal in the project's
+root directory and run the following commands:
+
+\begin{verbatim}
+cd Project
+make
+\end{verbatim}
+
+After the build completes successfully, the following executables
+should be available in the \texttt{Project} directory:
+
+\begin{itemize}
+    \item \texttt{wav\_app}
+    \item \texttt{wav\_cmp}
+    \item \texttt{wav\_effects}
+    \item \texttt{wav\_hist}
+    \item \texttt{wav\_quant}
+\end{itemize}
+
+\section{Running the Executables}
+
+While in the \texttt{Project} directory, run the executables as follows:
+
+\begin{itemize}
+    \item \textbf{Histogram:}
+    \begin{verbatim}
+./wav_hist input.wav
+    \end{verbatim}
+    
+
+    \item \textbf{Quantization:}
+    \begin{verbatim}
+./wav_quant input.wav output.wav --bits n
+    \end{verbatim}
+
+
+    \item \textbf{Comparison:}
+    \begin{verbatim}
+./wav_cmp input.wav input_quantized.wav
+    \end{verbatim}
+
+
+    \item \textbf{Audio effects:}
+    \begin{verbatim}
+./wav_effects
+    \end{verbatim}
+
+
+\end{itemize}
+
+
+\section{Using the Codecs}
