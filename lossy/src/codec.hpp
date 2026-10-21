@@ -10,6 +10,7 @@ struct EncoderParams
     TransformType transform = TransformType::Mdct;
     size_t blockSize = 1024;   // N: coefficients per block (= hop size)
     double step = 16.0;        // quantization step, in units of a 16-bit sample
+    bool midSide = true;       // stereo: allow Mid/Side coding (chosen per block)
     bool verbose = false;
 };
 

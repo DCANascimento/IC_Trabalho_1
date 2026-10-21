@@ -14,6 +14,7 @@ static void usage(const char* prog)
               << "  -n <size>   block size N, a power of two in " << MIN_BLOCK_SIZE << ".."
               << MAX_BLOCK_SIZE << " (default 1024)\n"
               << "  -t <type>   transform: mdct (default) or dct (non-overlapping blocks)\n"
+              << "  --no-ms     stereo: always code L/R (never Mid/Side)\n"
               << "  -v          print statistics\n";
 }
 
@@ -30,6 +31,10 @@ int main(int argc, char* argv[])
         if (std::strcmp(argv[arg], "-v") == 0)
         {
             params.verbose = true;
+        }
+        else if (std::strcmp(argv[arg], "--no-ms") == 0)
+        {
+            params.midSide = false;
         }
         else if (std::strcmp(argv[arg], "-q") == 0 && hasValue)
         {

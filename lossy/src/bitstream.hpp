@@ -24,6 +24,13 @@ inline int32_t zigzagDecode(uint32_t u)
 const uint32_t RICE_ESCAPE = 32;
 const int MAX_RICE_PARAMETER = 30;
 
+// Size in bits of the Rice code of v with parameter k.
+inline uint32_t riceLength(uint32_t v, int k)
+{
+    const uint32_t q = v >> k;
+    return q < RICE_ESCAPE ? q + 1 + k : RICE_ESCAPE + 32;
+}
+
 class BitWriter
 {
 public:
