@@ -3,6 +3,10 @@
 
 #include "audio.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     double bin_width;
     int num_bins;
@@ -32,5 +36,9 @@ void create_histograms(
     Histogram *mid,
     Histogram *side
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

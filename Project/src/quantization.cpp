@@ -1,10 +1,11 @@
+extern "C" {
 #include "quantization.h"
-
 #include "wav.h"
+}
 
-#include <math.h>
-#include <stdint.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
 
 int quantize_wav_file(
     const char *input_filename,
@@ -23,17 +24,17 @@ int quantize_wav_file(
 
     int step = 1 << (16 - bits);
     int16_t *quantized =
-        malloc(audio.num_samples * sizeof(int16_t));
+        static_cast<int16_t *>(std::malloc(audio.num_samples * sizeof(int16_t)));
 
-    if (quantized == NULL) {
+    if (quantized == nullptr) {
         audio_free(&audio);
         return 1;
     }
 
     for (size_t i = 0; i < audio.num_samples; i++) {
         double lower =
-            floor((double)audio.samples_16[i] / step) * step;
-        double reconstructed = lower + floor(step / 2.0);
+            std::floor(static_cast<double>(audio.samples_16[i]) / step) * step;
+        double reconstructed = lower + std::floor(step / 2.0);
 
         if (reconstructed < -32768.0) {
             reconstructed = -32768.0;
@@ -43,12 +44,12 @@ int quantize_wav_file(
             reconstructed = 32767.0;
         }
 
-        quantized[i] = (int16_t)reconstructed;
+        quantized[i] = static_cast<int16_t>(reconstructed);
     }
 
     int result = wav_write_16(output_filename, &audio, quantized);
 
-    free(quantized);
+    std::free(quantized);
     audio_free(&audio);
     return result;
 }

@@ -4,6 +4,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     double *samples;
     int16_t *samples_16;
@@ -13,5 +17,9 @@ typedef struct {
 } Audio;
 
 void audio_free(Audio *audio);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -1,7 +1,9 @@
+extern "C" {
 #include "histogram.h"
+}
 
-#include <stdlib.h>
-#include <math.h>
+#include <cstdlib>
+#include <cmath>
 
 void histogram_create(
     Histogram *hist,
@@ -12,10 +14,10 @@ void histogram_create(
     hist->bin_width = bin_width;
 
     hist->num_bins =
-        (int)ceil((max - min) / bin_width);
+        static_cast<int>(std::ceil((max - min) / bin_width));
 
     hist->counts =
-        calloc(hist->num_bins, sizeof(int));
+        static_cast<int *>(std::calloc(hist->num_bins, sizeof(int)));
 }
 
 void histogram_add(
@@ -24,7 +26,7 @@ void histogram_add(
     double min)
 {
     int bin =
-        (int)((value - min) / hist->bin_width);
+        static_cast<int>((value - min) / hist->bin_width);
 
     if (bin >= 0 && bin < hist->num_bins) {
         hist->counts[bin]++;
@@ -33,7 +35,7 @@ void histogram_add(
 
 void histogram_free(Histogram *hist)
 {
-    free(hist->counts);
+    std::free(hist->counts);
 }
 
 void create_histograms(
@@ -45,7 +47,7 @@ void create_histograms(
     Histogram *side)
 {
     double bin_width =
-        (double)(1 << bits) /
+        static_cast<double>(1 << bits) /
         audio->sample_rate;
 
     double min = -1.0;

@@ -1,40 +1,41 @@
+extern "C" {
 #include "effects.h"
-
 #include "wav.h"
+}
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #define PI 3.14159265358979323846
 
 static int set_error(char *message, size_t size, const char *text)
 {
-    if (message != NULL && size > 0) {
-        snprintf(message, size, "%s", text);
+    if (message != nullptr && size > 0) {
+        std::snprintf(message, size, "%s", text);
     }
     return 1;
 }
 
 static size_t frames_in(const Audio *audio)
 {
-    return audio->num_samples / (size_t)audio->num_channels;
+    return audio->num_samples / static_cast<size_t>(audio->num_channels);
 }
 
 static int allocate_audio(Audio *audio, size_t frames, int channels, int rate)
 {
-    if (frames > (size_t)-1 / (size_t)channels ||
-        frames * (size_t)channels > (size_t)-1 / sizeof(double)) {
+    if (frames > static_cast<size_t>(-1) / static_cast<size_t>(channels) ||
+        frames * static_cast<size_t>(channels) > static_cast<size_t>(-1) / sizeof(double)) {
         return 1;
     }
 
-    audio->num_samples = frames * (size_t)channels;
+    audio->num_samples = frames * static_cast<size_t>(channels);
     audio->num_channels = channels;
     audio->sample_rate = rate;
-    audio->samples_16 = NULL;
-    audio->samples = calloc(audio->num_samples, sizeof(double));
-    return audio->samples == NULL;
+    audio->samples_16 = nullptr;
+    audio->samples = static_cast<double *>(std::calloc(audio->num_samples, sizeof(double)));
+    return audio->samples == nullptr;
 }
 
 static void normalize(Audio *audio)
@@ -42,7 +43,7 @@ static void normalize(Audio *audio)
     double peak = 0.0;
 
     for (size_t i = 0; i < audio->num_samples; i++) {
-        double value = fabs(audio->samples[i]);
+        double value = std::fabs(audio->samples[i]);
         if (value > peak) {
             peak = value;
         }
@@ -58,22 +59,22 @@ static void normalize(Audio *audio)
 static double sample_at(const Audio *audio, int channel, double position)
 {
     size_t frames = frames_in(audio);
-    if (position < 0.0 || position > (double)(frames - 1)) {
+    if (position < 0.0 || position > static_cast<double>(frames - 1)) {
         return 0.0;
     }
 
-    long left = (long)floor(position);
-    double fraction = position - (double)left;
+    long left = static_cast<long>(std::floor(position));
+    double fraction = position - static_cast<double>(left);
     double first = 0.0;
     double second = 0.0;
 
-    if (left >= 0 && (size_t)left < frames) {
-        first = audio->samples[(size_t)left * (size_t)audio->num_channels +
-            (size_t)channel];
+    if (left >= 0 && static_cast<size_t>(left) < frames) {
+        first = audio->samples[static_cast<size_t>(left) * static_cast<size_t>(audio->num_channels) +
+            static_cast<size_t>(channel)];
     }
-    if (left + 1 >= 0 && (size_t)(left + 1) < frames) {
-        second = audio->samples[(size_t)(left + 1) *
-            (size_t)audio->num_channels + (size_t)channel];
+    if (left + 1 >= 0 && static_cast<size_t>(left + 1) < frames) {
+        second = audio->samples[static_cast<size_t>(left + 1) *
+            static_cast<size_t>(audio->num_channels) + static_cast<size_t>(channel)];
     }
 
     return first + fraction * (second - first);
@@ -145,10 +146,10 @@ int audio_apply_effect(
     char *error_message,
     size_t error_message_size)
 {
-    if (input == NULL || output == NULL || input->samples == NULL ||
+    if (input == nullptr || output == nullptr || input->samples == nullptr ||
         input->num_channels <= 0 || input->sample_rate <= 0 ||
         input->num_samples == 0 ||
-        input->num_samples % (size_t)input->num_channels != 0) {
+        input->num_samples % static_cast<size_t>(input->num_channels) != 0) {
         return set_error(error_message, error_message_size,
             "Input audio is empty or invalid.");
     }
@@ -161,25 +162,25 @@ int audio_apply_effect(
     size_t frames = frames_in(input);
     int channels = input->num_channels;
     int rate = input->sample_rate;
-    size_t delay_samples;
+    size_t delay_samples = 0;
     size_t output_frames = frames;
 
     switch (effect) {
     case AUDIO_EFFECT_ECHO_1:
     case AUDIO_EFFECT_ECHO_2:
     case AUDIO_EFFECT_ECHO_3:
-        delay_samples = (size_t)llround(
+        delay_samples = static_cast<size_t>(std::llround(
             (effect == AUDIO_EFFECT_ECHO_1 ? 0.45 :
-             effect == AUDIO_EFFECT_ECHO_2 ? 0.75 : 0.30) * rate);
+             effect == AUDIO_EFFECT_ECHO_2 ? 0.75 : 0.30) * rate));
         output_frames += delay_samples;
         break;
     case AUDIO_EFFECT_MULTIPLE_FEEDFORWARD:
-        delay_samples = (size_t)llround(0.35 * rate);
+        delay_samples = static_cast<size_t>(std::llround(0.35 * rate));
         output_frames += 5 * delay_samples;
         break;
     case AUDIO_EFFECT_MULTIPLE_FEEDBACK:
-        delay_samples = (size_t)llround(0.35 * rate);
-        output_frames += (size_t)ceil(log(0.001) / log(0.60)) * delay_samples;
+        delay_samples = static_cast<size_t>(std::llround(0.35 * rate));
+        output_frames += static_cast<size_t>(std::ceil(std::log(0.001) / std::log(0.60))) * delay_samples;
         break;
     case AUDIO_EFFECT_AM:
     case AUDIO_EFFECT_TREMOLO:
@@ -214,8 +215,8 @@ int audio_apply_effect(
         for (size_t frame = 0; frame < frames; frame++) {
             for (int channel = 0; channel < channels; channel++) {
                 size_t destination = (frame + delay_samples) *
-                    (size_t)channels + (size_t)channel;
-                size_t source = frame * (size_t)channels + (size_t)channel;
+                    static_cast<size_t>(channels) + static_cast<size_t>(channel);
+                size_t source = frame * static_cast<size_t>(channels) + static_cast<size_t>(channel);
                 output->samples[destination] += gain * input->samples[source];
             }
         }
@@ -225,8 +226,8 @@ int audio_apply_effect(
             for (size_t frame = 0; frame < frames; frame++) {
                 for (int channel = 0; channel < channels; channel++) {
                     size_t destination = (frame + (echo + 1) * delay_samples) *
-                        (size_t)channels + (size_t)channel;
-                    size_t source = frame * (size_t)channels + (size_t)channel;
+                        static_cast<size_t>(channels) + static_cast<size_t>(channel);
+                    size_t source = frame * static_cast<size_t>(channels) + static_cast<size_t>(channel);
                     output->samples[destination] +=
                         gains[echo] * input->samples[source];
                 }
@@ -235,67 +236,67 @@ int audio_apply_effect(
     } else if (effect == AUDIO_EFFECT_MULTIPLE_FEEDBACK) {
         for (size_t frame = delay_samples; frame < output_frames; frame++) {
             for (int channel = 0; channel < channels; channel++) {
-                size_t index = frame * (size_t)channels + (size_t)channel;
+                size_t index = frame * static_cast<size_t>(channels) + static_cast<size_t>(channel);
                 size_t delayed = (frame - delay_samples) *
-                    (size_t)channels + (size_t)channel;
+                    static_cast<size_t>(channels) + static_cast<size_t>(channel);
                 double source = frame < frames ? input->samples[index] : 0.0;
                 output->samples[index] = source + 0.60 * output->samples[delayed];
             }
         }
     } else {
         for (size_t frame = 0; frame < frames; frame++) {
-            double time = (double)frame / rate;
+            double time = static_cast<double>(frame) / rate;
             double multiplier = 1.0;
 
             if (effect == AUDIO_EFFECT_AM) {
-                multiplier = 1.0 + cos(2.0 * PI * frequency_hz * time);
+                multiplier = 1.0 + std::cos(2.0 * PI * frequency_hz * time);
             } else if (effect == AUDIO_EFFECT_TREMOLO) {
-                multiplier = 1.0 + 0.85 * cos(2.0 * PI * frequency_hz * time);
+                multiplier = 1.0 + 0.85 * std::cos(2.0 * PI * frequency_hz * time);
             }
 
             double delay_seconds = 0.0;
             if (effect == AUDIO_EFFECT_VIBRATO) {
                 delay_seconds = depth_ms / 1000.0 *
-                    sin(2.0 * PI * frequency_hz * time);
+                    std::sin(2.0 * PI * frequency_hz * time);
             } else if (effect == AUDIO_EFFECT_CHORUS) {
                 delay_seconds = 0.018 + 0.008 *
-                    sin(2.0 * PI * frequency_hz * time);
+                    std::sin(2.0 * PI * frequency_hz * time);
             } else if (effect == AUDIO_EFFECT_FLANGER) {
                 delay_seconds = 0.005 + 0.004 *
-                    sin(2.0 * PI * frequency_hz * time);
+                    std::sin(2.0 * PI * frequency_hz * time);
             } else if (effect == AUDIO_EFFECT_DOPPLER) {
-                double duration = (double)(frames - 1) / rate;
+                double duration = static_cast<double>(frames - 1) / rate;
                 delay_seconds = 0.040 + 0.025 *
-                    sin(2.0 * PI * time / duration);
+                    std::sin(2.0 * PI * time / duration);
             }
 
             for (int channel = 0; channel < channels; channel++) {
-                size_t index = frame * (size_t)channels + (size_t)channel;
+                size_t index = frame * static_cast<size_t>(channels) + static_cast<size_t>(channel);
                 if (effect == AUDIO_EFFECT_AM || effect == AUDIO_EFFECT_TREMOLO) {
                     output->samples[index] = input->samples[index] * multiplier;
                 } else if (effect == AUDIO_EFFECT_VIBRATO) {
                     output->samples[index] = sample_at(
-                        input, channel, (double)frame - delay_seconds * rate);
+                        input, channel, static_cast<double>(frame) - delay_seconds * rate);
                 } else if (effect == AUDIO_EFFECT_CHORUS) {
                     double delayed = sample_at(
-                        input, channel, (double)frame - delay_seconds * rate);
+                        input, channel, static_cast<double>(frame) - delay_seconds * rate);
                     output->samples[index] = 0.20 * input->samples[index] +
                         0.80 * delayed;
                 } else if (effect == AUDIO_EFFECT_FLANGER) {
                     double delayed = sample_at(
-                        input, channel, (double)frame - delay_seconds * rate);
+                        input, channel, static_cast<double>(frame) - delay_seconds * rate);
                     output->samples[index] = input->samples[index] +
                         0.90 * delayed;
                 } else if (effect == AUDIO_EFFECT_DOPPLER) {
                     output->samples[index] = sample_at(
-                        input, channel, (double)frame - delay_seconds * rate);
+                        input, channel, static_cast<double>(frame) - delay_seconds * rate);
                 }
             }
         }
     }
 
     normalize(output);
-    if (error_message != NULL && error_message_size > 0) {
+    if (error_message != nullptr && error_message_size > 0) {
         error_message[0] = '\0';
     }
     return 0;
@@ -303,12 +304,12 @@ int audio_apply_effect(
 
 int audio_effect_write_wav(const char *filename, const Audio *audio)
 {
-    if (audio == NULL || audio->samples == NULL || audio->num_channels <= 0) {
+    if (audio == nullptr || audio->samples == nullptr || audio->num_channels <= 0) {
         return 1;
     }
 
-    int16_t *samples = malloc(audio->num_samples * sizeof(int16_t));
-    if (samples == NULL) {
+    int16_t *samples = static_cast<int16_t *>(std::malloc(audio->num_samples * sizeof(int16_t)));
+    if (samples == nullptr) {
         return 1;
     }
 
@@ -316,13 +317,13 @@ int audio_effect_write_wav(const char *filename, const Audio *audio)
         double value = audio->samples[i];
         if (value > 1.0) value = 1.0;
         if (value < -1.0) value = -1.0;
-        long quantized = lrint(value * 32768.0);
+        long quantized = std::lrint(value * 32768.0);
         if (quantized > 32767) quantized = 32767;
         if (quantized < -32768) quantized = -32768;
-        samples[i] = (int16_t)quantized;
+        samples[i] = static_cast<int16_t>(quantized);
     }
 
     int result = wav_write_16(filename, audio, samples);
-    free(samples);
+    std::free(samples);
     return result;
 }

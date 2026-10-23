@@ -1,15 +1,16 @@
+extern "C" {
 #include "comparison.h"
-
 #include "wav.h"
+}
 
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
 
 static int set_error(char *message, size_t message_size, const char *text)
 {
-    if (message != NULL && message_size > 0) {
-        snprintf(message, message_size, "%s", text);
+    if (message != nullptr && message_size > 0) {
+        std::snprintf(message, message_size, "%s", text);
     }
     return 1;
 }
@@ -21,7 +22,7 @@ int compare_wav_files(
     char *error_message,
     size_t error_message_size)
 {
-    if (comparison == NULL) {
+    if (comparison == nullptr) {
         return set_error(error_message, error_message_size,
             "Comparison result is missing.");
     }
@@ -61,10 +62,10 @@ int compare_wav_files(
             "The WAV files have different lengths.");
     }
 
-    memset(comparison, 0, sizeof(*comparison));
+    std::memset(comparison, 0, sizeof(*comparison));
     comparison->num_channels = original.num_channels;
     size_t samples_per_channel =
-        original.num_samples / (size_t)original.num_channels;
+        original.num_samples / static_cast<size_t>(original.num_channels);
 
     for (int channel = 0; channel < comparison->num_channels; channel++) {
         double squared_error_sum = 0.0;
@@ -72,11 +73,11 @@ int compare_wav_files(
         double max_error = 0.0;
 
         for (size_t frame = 0; frame < samples_per_channel; frame++) {
-            size_t index = frame * (size_t)original.num_channels +
-                (size_t)channel;
+            size_t index = frame * static_cast<size_t>(original.num_channels) +
+                static_cast<size_t>(channel);
             double signal = original.samples[index];
             double difference = signal - processed.samples[index];
-            double absolute_error = fabs(difference);
+            double absolute_error = std::fabs(difference);
 
             squared_error_sum += difference * difference;
             signal_power_sum += signal * signal;
@@ -85,14 +86,14 @@ int compare_wav_files(
             }
         }
 
-        double mse = squared_error_sum / (double)samples_per_channel;
-        double signal_power = signal_power_sum / (double)samples_per_channel;
+        double mse = squared_error_sum / static_cast<double>(samples_per_channel);
+        double signal_power = signal_power_sum / static_cast<double>(samples_per_channel);
         double snr_db;
 
         if (mse == 0.0) {
-            snr_db = signal_power == 0.0 ? NAN : INFINITY;
+            snr_db = (signal_power == 0.0) ? NAN : INFINITY;
         } else {
-            snr_db = 10.0 * log10(signal_power / mse);
+            snr_db = 10.0 * std::log10(signal_power / mse);
         }
 
         comparison->channels[channel].mse = mse;
@@ -107,7 +108,7 @@ int compare_wav_files(
     comparison->average.max_error /= comparison->num_channels;
     comparison->average.snr_db /= comparison->num_channels;
 
-    if (error_message != NULL && error_message_size > 0) {
+    if (error_message != nullptr && error_message_size > 0) {
         error_message[0] = '\0';
     }
 

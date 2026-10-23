@@ -3,6 +3,10 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define COMPARISON_MAX_CHANNELS 2
 
 typedef struct {
@@ -24,5 +28,9 @@ int compare_wav_files(
     char *error_message,
     size_t error_message_size
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

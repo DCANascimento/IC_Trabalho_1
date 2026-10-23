@@ -15,17 +15,18 @@ CMP_TARGET = wav_cmp
 EFFECTS_TARGET = wav_effects
 GUI_TARGET = wav_app
 
-SRC = src/wav.c src/histogram.c src/quantization.c src/comparison.c src/effects.c
-HIST_PROGRAM = programs/wav_hist.c
-QUANT_PROGRAM = programs/wav_quant.c
-CMP_PROGRAM = programs/wav_cmp.c
-EFFECTS_PROGRAM = programs/wav_effects.c
+SRC = src/wav.cpp src/histogram.cpp src/quantization.cpp src/comparison.cpp src/effects.cpp
 
-SRC_OBJ = $(SRC:.c=.o)
-HIST_OBJ = $(HIST_PROGRAM:.c=.o)
-QUANT_OBJ = $(QUANT_PROGRAM:.c=.o)
-CMP_OBJ = $(CMP_PROGRAM:.c=.o)
-EFFECTS_OBJ = $(EFFECTS_PROGRAM:.c=.o)
+HIST_PROGRAM = programs/wav_hist.cpp
+QUANT_PROGRAM = programs/wav_quant.cpp
+CMP_PROGRAM = programs/wav_cmp.cpp
+EFFECTS_PROGRAM = programs/wav_effects.cpp
+
+SRC_OBJ = $(SRC:.cpp=.o)
+HIST_OBJ = $(HIST_PROGRAM:.cpp=.o)
+QUANT_OBJ = $(QUANT_PROGRAM:.cpp=.o)
+CMP_OBJ = $(CMP_PROGRAM:.cpp=.o)
+EFFECTS_OBJ = $(EFFECTS_PROGRAM:.cpp=.o)
 
 GUI_SRC = gui/main.cpp gui/app.cpp gui/histogram_view.cpp
 GUI_OBJ = $(GUI_SRC:.cpp=.o)
@@ -35,31 +36,31 @@ all: $(TARGET) $(QUANT_TARGET) $(CMP_TARGET) $(EFFECTS_TARGET) $(GUI_TARGET)
 
 
 $(TARGET): src/wav.o src/histogram.o $(HIST_OBJ)
-	$(CC) $(CFLAGS) -o $@ src/wav.o src/histogram.o $(HIST_OBJ) $(LDFLAGS)
+	$(CXX) -o $@ src/wav.o src/histogram.o $(HIST_OBJ) $(LDFLAGS)
 
 
 $(QUANT_TARGET): src/wav.o src/quantization.o $(QUANT_OBJ)
-	$(CC) $(CFLAGS) -o $@ src/wav.o src/quantization.o $(QUANT_OBJ) $(LDFLAGS)
+	$(CXX) -o $@ src/wav.o src/quantization.o $(QUANT_OBJ) $(LDFLAGS)
 
 
 $(CMP_TARGET): src/wav.o src/comparison.o $(CMP_OBJ)
-	$(CC) $(CFLAGS) -o $@ src/wav.o src/comparison.o $(CMP_OBJ) $(LDFLAGS)
+	$(CXX) -o $@ src/wav.o src/comparison.o $(CMP_OBJ) $(LDFLAGS)
 
 
 $(EFFECTS_TARGET): src/wav.o src/effects.o $(EFFECTS_OBJ)
-	$(CC) $(CFLAGS) -o $@ src/wav.o src/effects.o $(EFFECTS_OBJ) $(LDFLAGS)
+	$(CXX) -o $@ src/wav.o src/effects.o $(EFFECTS_OBJ) $(LDFLAGS)
 
 
 $(GUI_TARGET): $(GUI_OBJ) src/wav.o src/histogram.o src/quantization.o src/comparison.o src/effects.o
 	$(CXX) -o $@ $(GUI_OBJ) src/wav.o src/histogram.o src/quantization.o src/comparison.o src/effects.o $(GTK_LIBS) $(LDFLAGS)
 
 
-src/%.o: src/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+src/%.o: src/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 
-programs/%.o: programs/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+programs/%.o: programs/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 
 gui/%.o: gui/%.cpp

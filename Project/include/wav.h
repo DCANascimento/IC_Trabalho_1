@@ -3,6 +3,10 @@
 
 #include "audio.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int wav_read(const char *filename, Audio *audio);
 
 int wav_write_16(
@@ -10,5 +14,9 @@ int wav_write_16(
 	const Audio *audio,
 	const int16_t *samples
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

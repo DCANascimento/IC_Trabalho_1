@@ -3,6 +3,10 @@
 
 #include "audio.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     AUDIO_EFFECT_ECHO_1 = 1,
     AUDIO_EFFECT_ECHO_2,
@@ -30,5 +34,9 @@ int audio_apply_effect(
 const char *audio_effect_name(AudioEffect effect);
 
 int audio_effect_write_wav(const char *filename, const Audio *audio);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
