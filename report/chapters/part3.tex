@@ -6,19 +6,146 @@ Lastly, for the third part, we implemented a \textbf{\textit{Lossy Audio Codec}}
 \vspace{10pt}
 \section{State-of-the-Art Evaluation}
 
+Like how it was done for the lossless variant, before developing our lossy audio codec we began with an evaluation of other existing codecs. The results are displayed below, in Table \ref{tab:lossy-codecs}.
+
+
+\begin{table}[htbp]
+    \centering
+    \caption{Lossy audio codec comparison (based on raw mathematical SNR, bitrate, and resource benchmarks)}
+    \label{tab:lossy-codecs}
+
+    \renewcommand{\arraystretch}{1.3}
+    \setlength{\tabcolsep}{6pt}
+
+    \begin{tabularx}{\textwidth}{
+        @{}
+        >{\raggedright\arraybackslash}p{0.17\textwidth}
+        >{\raggedright\arraybackslash}X
+        >{\raggedright\arraybackslash}X
+        @{}
+    }
+        \toprule
+        \textbf{Codec / Compressor} & \textbf{Pros} & \textbf{Cons} \\
+        \midrule
+
+        \textbf{MP3 (LAME)}
+        &
+        \begin{itemize}[leftmargin=*, nosep]
+            \item Universal compatibility across virtually every legacy and modern hardware/software player.
+            \item Well-established, mature ecosystem.
+        \end{itemize}
+        &
+        \begin{itemize}[leftmargin=*, nosep]
+            \item Lower compression efficiency and poorer BD-rate performance compared to modern codecs.
+            \item Higher overall program memory footprint when running via wrapper suites like FFmpeg.
+        \end{itemize}
+        \\
+
+        \addlinespace
+        \midrule
+
+        \textbf{AAC (FFmpeg)}
+        &
+        \begin{itemize}[leftmargin=*, nosep]
+            \item Industry standard for streaming, web, and Apple ecosystems.
+            \item Better rate-distortion efficiency than MP3.
+        \end{itemize}
+        &
+        \begin{itemize}[leftmargin=*, nosep]
+            \item Lower raw mathematical SNR than our custom transform codec in direct unweighted benchmarks.
+            \item Higher memory overhead during runtime.
+        \end{itemize}
+        \\
+
+        \addlinespace
+        \midrule
+
+        \textbf{Opus}
+        &
+        \begin{itemize}[leftmargin=*, nosep]
+            \item State-of-the-art perceptual quality for speech and music, especially at low bitrates.
+            \item Highly optimized for real-time communication and streaming.
+        \end{itemize}
+        &
+        \begin{itemize}[leftmargin=*, nosep]
+            \item Lower raw mathematical SNR in direct benchmarks because it heavily targets psychoacoustics rather than raw wave matching.
+            \item Fixed 48 kHz internal decoding pipeline requires resampling overhead.
+        \end{itemize}
+        \\
+        
+        \bottomrule
+    \end{tabularx}
+
+    \vspace{2mm}
+    \small
+    \noindent\textit{Note:} Raw Signal-to-Noise Ratio (SNR) does not equal perceived quality; standard codecs like MP3, AAC, and Opus utilize advanced psychoacoustic models to remove inaudible frequencies and place noise where it cannot be heard, meaning they may sound better to the human ear despite lower mathematical SNR scores.
+\end{table}
+
 \vspace{10pt}
 \section{Our Implementation}
 
 Similarly to the previous codec, this one was split into:
 
 \begin{itemize}
-    \item \textbf{}
+    \item \textbf{codec.cpp} orchestrates the entire compression and decompression pipeline. It handles WAV reading, coordinates the MDCT/DCT transforms, applies MID/SIDE stereo rotation, manages deadzone quantization with centroid tracking, executes rate control via binary search, and packs/unpacks the file headers containing the `LSY6` magic tag, block size, step, and reconstruction offsets.
     
-    \item \textbf{}
-     
-    \item \textbf{}
+    \item \textbf{transform.cpp} implements the mathematical core of the codec. It applies the sine window, handles block overlapping, and computes the MDCT/DCT efficiently by folding the input into a DCT-IV using an internal FFT.
     
-    \item \textbf{}
+    \item \textbf{zigzag.cpp}, like in the previous codec, maps signed quantized integers into unsigned integers. This transformation groups small numbers together, preparing them for more efficient entropy coding later on.
+    
+    \item \textbf{rice.cpp} handles Rice coding and features an adaptive context predictor. Instead of storing a global k value, it looks at 8 neighboring coefficients (from the current and previous blocks) to dynamically predict the optimal Rice parameter k on the fly for every single coefficient with zero metadata overhead.
+    
+    \item \textbf{bitstream.cpp} provides low-level bit manipulation via `BitWriter` and `BitReader`. It packs variable-length Rice codes, the `last` non-zero position markers, and stereo Mid/Side flags tightly into the output byte stream.
+    
+    \item \textbf{bytes.cpp} (and WAV handler) manages high-level binary file I/O, writing and reading structural file components, validating the format magic bytes, and extracting raw PCM samples alongside metadata like sample rate, channel count, and bits per sample.
 \end{itemize}
 
+A model of the first implementation of the pipeline is shown in Figure \ref{fig:lossy_diagram}
 
+\begin{figure}[H]
+\centering
+  \includegraphics[width=1.0\linewidth, height=14cm, keepaspectratio]{lossy_diagram.png}
+  \caption{Diagram of the Encoding/Decoding Pipeline of the lossy codec}
+  \label{fig:lossy_diagram}
+\end{figure}
+
+
+\vspace{10pt}
+\section{Model Comparison}
+
+
+
+
+
+\vspace{10pt}
+\section{Final Adjustments}
+
+Like with the lossless encoder, we expected that block encoding might end up being implemented later on, to improve our compression results, as well as splitting both channels (in the case of stereo) into MID and SIDE channels. However, besides those changes, we have also that identified other possible improvements:
+
+\begin{enumerate}
+
+    \item \textbf{Quantization and centroid reconstruction:} We can replace simple uniform scaling with an advanced deadzone quantizer paired with centroid reconstruction parameters, effectively eliminating faint background noise and recovering precision.
+
+    \item \textbf{Context based Rice encoding:} While before we used a single global parameter for an entire block, often resulting in inefficient bit distribution, we can dynamically calculate and predict an optimal k parameter for every single coefficient.
+
+\end{enumerate}
+
+After the changes done, we observed better general results, as seen in Fig \ref{fig:rd_mpeg}, and despite the fact that raw SNR is not a completely fool proof way to measure the quality of the output, our focus was in pure audio reduction, as opposed to fully practical.
+
+\begin{figure}[H]
+\centering
+  \includegraphics[width=0.6\linewidth, height=14cm, keepaspectratio]{rd_mpeg.png}
+  \caption{Comparison between our codec and the previously mentioned models}
+  \label{fig:rd_mpeg}
+\end{figure}
+
+Comparing as well to our previous iteration, the implementation of a k variable that is context-adaptive, instead of globally set, helped optimize bit allocation across varying coefficient magnitudes, preventing wasted capacity on small high-frequency values and significantly reducing cumulative bit consumption.
+
+The example in Fig \ref{fig:rice_k_profile} shows a range of frequency coefficients, alongside the resulting k parameter selection and cumulative bit consumption for both versions of the codec.
+
+\begin{figure}[H]
+\centering
+  \includegraphics[width=1\linewidth, height=14cm, keepaspectratio]{rice_k_profile.png}
+  \caption{Rice parameter methodology evaluation between codec versions}
+  \label{fig:rice_k_profile}
+\end{figure}

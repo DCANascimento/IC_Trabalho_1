@@ -149,7 +149,7 @@ reproduce the tables of the report are described in [`lossy/tools/README.md`](lo
 - [x] Part I — `wav_quant` (MATLAB prototype and C/C++ application)
 - [x] Part I — `wav_cmp` (MATLAB prototype and C/C++ application)
 - [x] Part I — `wav_effects` (MATLAB prototype and C/C++ application)
-- [ ] Part II — lossless codec
+- [x] Part II — lossless codec
 - [x] Part III — lossy codec
 - [ ] Part IV — reports
  

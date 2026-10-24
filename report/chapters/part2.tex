@@ -5,7 +5,7 @@ Moving to the codecs, the \textbf{\textit{Lossless Audio Codec}} is a program th
 \vspace{10pt}
 \section{State-of-the-Art Evaluation}
 
-We first decided to make a general evaluation of other lossless audio codecs, in order to better understand other implementation, and potentially figure out what we could learn from. After some research we ended up with the following:
+We first decided to make a general evaluation of other lossless audio codecs, in order to better understand other implementation, and potentially figure out what we could learn from. After some research we ended up with the information displayed in Table \ref{tab:lossless-codecs}.
 
 
 \begin{table}[htbp]
@@ -113,8 +113,6 @@ We first decided to make a general evaluation of other lossless audio codecs, in
         \end{itemize}
         \\
 
-
-
         \bottomrule
     \end{tabularx}
 
@@ -123,15 +121,13 @@ We first decided to make a general evaluation of other lossless audio codecs, in
     \noindent\textit{Note:} ALAC (Apple Lossless Audio Codec) is just an Apple alternative of FLAC.
 \end{table}
 
-From the research results we obtained, as seen in Table \ref{tab:lossless-codecs}, we understand that...
-
 \vspace{10pt}
 \section{Our Implementation}
 
 This part of the work was split into a few submodules:
 
 \begin{itemize}
-    \item \textbf{wav.cpp} this file allows us to read/write a wav file. From a wav file, besides the PCM audio samples that are later encoded, we also take metadata, such as sample rate, number of channels, bits per sample and audio format. During decoding, this data is written back in, alongside the original audio samples.
+    \item \textbf{wav.cpp} allows us to read/write a wav file. From a wav file, besides the PCM audio samples that are later encoded, we also take metadata, such as sample rate, number of channels, bits per sample and audio format. During decoding, this data is written back in, alongside the original audio samples.
     
     \item \textbf{predictor.cpp} takes the raw vector and through residual calculation it reduces the space required to store the data. (Write specifics?)
      
@@ -145,8 +141,9 @@ This part of the work was split into a few submodules:
 Below, in Fig. \ref{fig:lossless_diagram}, is a diagram we made for clarity.
 
 \begin{figure}[H]
-  \includegraphics[width=1.0\linewidth, height=20cm, keepaspectratio]{lossless_diagram.png}
-  \caption{Diagram of the Encoding/Decoding Pipeline of the codec}
+\centering
+  \includegraphics[width=1.0\linewidth, height=14cm, keepaspectratio]{lossless_diagram.png}
+  \caption{Diagram of the Encoding/Decoding Pipeline of the lossless codec}
   \label{fig:lossless_diagram}
 \end{figure}
 
@@ -246,7 +243,10 @@ Given our obtained results, we decided on some changes that could potentially im
 
     \item \textbf{Block encoding:} Before, we would apply the whole enconding strategy to the entire sample field, all with the same parameters. Now, we have decided to split the samples into blocks, and each block 
 
-    \item \textbf{MID/SIDE channels:} By taking the difference between the left and right channels (assuming stereo), as well as the average of the two, we can potentially obtain smaller values to the original ones, increasing compression rate. However, like 
-
+    \item \textbf{MID/SIDE channels:} By taking the difference between the left and right channels (assuming stereo), as well as the average of the two, we can potentially obtain smaller values to the original ones, increasing compression rate. However, like with Rice encoding, if the resulting values are larger, we can choose to keep the originals.
+    
+    \item \textbf{Predictor adjustment:} By using a second order predictor, as opposed to first order, we can model smooth waveforms by tracking signal trends and slopes rather than assuming a flat line, resulting in significantly smaller residuals and improved compression efficiency
 
 \end{enumerate}
+
+After these changes were applied, we observed a significant

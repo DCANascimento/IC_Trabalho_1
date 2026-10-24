@@ -1,3 +1,5 @@
+\begingroup
+\let\clearpage\relax
 \chapter{Part I}
 
 For the first part, we started by learning the intricacies of audio waveform manipulation by creating some simple files. These include:
@@ -34,6 +36,8 @@ In the first step, we immediately encountered a major difference between matlab 
 \vspace{10pt}
 \section{Plotting Histograms}
 
+This part of the project simply served to help us understand the structure of the wav files we would be working with as a baseline. We applied simply read the wav files, take their samples, separate the audio tracks into left and right, calculate the MID and SIDE channels (by taking the average and difference of the two, respectively), and create the histograms, which display the amplitude of the audio samples over time.
+
 \vspace{10pt}
 \section{Audio Quantization}
 
@@ -46,8 +50,11 @@ For the WAV writing part, we simply do the reverse of the reader. We create the 
 \vspace{10pt}
 \section{Comparing Audios}
 
-To compare an audio file to its quantized form, we take both audio and start by checking if they share relevant parameters, like number of channels, number of samples and sample rate. After ensuring this, we calculate the mean squared error (by suming every squared error of each sample pair, and diving by the number of pairs being compared), the signal power sum (...) (Note: are formulas necessary?)
+To compare an audio file to its quantized form, we take both audio and start by checking if they share relevant parameters, like number of channels, number of samples and sample rate. After enduring this, the program computes metrics including the mean squared error (MSE), maximum absolute error, and the Signal-to-Noise Ratio (SNR) in decibels by evaluating signal power against error accumulation.
 
 \vspace{10pt}
 \section{Audio Effects}
 
+This component implements a suite of time-domain digital audio effects to dynamically alter the sound profile. By utilizing delay lines, feedback and feedforward loops, and modulation techniques (such as tremolo, vibrato, chorus, flanger, and Doppler shifts), the system transforms the waveform frames. It then normalizes the final output peaks to prevent signal clipping before writing the processed data back into a standard WAV format.
+
+\endgroup
