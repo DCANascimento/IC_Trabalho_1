@@ -1,6 +1,6 @@
 # Lossy codec: version 1 vs version 2
 
-Date: 2026-10-24 01:28. Files:
+Files:
 - sample01.wav
 - sample02.wav
 - sample03.wav

@@ -52,7 +52,7 @@ cd "$OUT"
 {
     echo "# Lossy codec: version 1 vs version 2"
     echo
-    echo "Date: $(date '+%Y-%m-%d %H:%M'). Files:"
+    echo "Files:"
     for f in "$AUDIO"/*.wav; do echo "- $(basename "$f")"; done
     echo
     echo "Every row is the mean over the files."

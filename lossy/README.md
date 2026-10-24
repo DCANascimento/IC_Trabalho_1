@@ -9,6 +9,7 @@ decoder:  file → context Rice decoding → dequantization (centroid) → [L/R]
 
 Version 1 (git tag `lossy-v1`) had the MDCT, uniform quantization and one Rice parameter per block.
 At equal SNR, version 2 needs **about 33 % fewer bits** (see [Results](#results)).
+At the same bitrate it has a much higher SNR than MP3, AAC and Opus, which optimize the perceived quality instead (see [Comparison with MP3, AAC and Opus](#comparison-with-mp3-aac-and-opus)).
 
 ## Build
 
@@ -115,7 +116,7 @@ Measured on `sample01` and on the averages of the 7 files in `../AudioFiles`.
   - The SNR is the same, because both transforms are orthonormal.
   - The MDCT needs 1–3 % fewer bits.
   - With the DCT, the jump of the error at block boundaries is 2.0× the jump elsewhere, which is heard as a periodic buzz. With the MDCT it is 1.0×.
-  - The fast MDCT encodes 29 s of audio in 0.05 s, against 2.5 s for the O(N²) DCT.
+  - The fast MDCT encodes `sample01` (29 s of audio) in 0.05 s, against 2.5 s for the O(N²) DCT.
 * **Block size N = 1024.** The minimum number of bits is reached at N = 1024–2048. 1024 was chosen because the shorter blocks spread less pre-echo before sharp attacks.
 
 | block size N | 128 | 256 | 512 | 1024 | 2048 | 4096 |
@@ -149,7 +150,7 @@ Measured on `sample01` and on the averages of the 7 files in `../AudioFiles`.
 
 ## Results
 
-Obtained with `tools/compare_versions.sh`, which builds v1 from the git tag and measures both versions. Each row is the average over the 7 files (44.1 kHz, 16-bit stereo; original 1411 kbps) for one quantization step q. The compression ratio is the average of the per-file ratios, so it is not exactly 1411 / bitrate. Times are for 29 s of audio on average; memory is the peak resident memory of the program. All tables and the per-file values are in `results/versions/`.
+Obtained with `tools/compare_versions.sh`, which builds v1 from the git tag and measures both versions. Each row is the average over the 7 files (44.1 kHz, 16-bit stereo; original 1411 kbps) for one quantization step q. The compression ratio is the average of the per-file ratios, so it is not exactly 1411 / bitrate. Times are per file (13–29 s of audio, 20.5 s on average); memory is the peak resident memory of the program. All tables and the per-file values are in `results/versions/`.
 
 ### Version 1
 
@@ -192,7 +193,7 @@ At the same step, v2 has a slightly lower SNR (about −0.5 dB, because of the d
 | 1024 | 26.03 | 135.5 | −30.0 % |
 
 Over the whole curve: **BD-rate −32.7 %** (bits at equal SNR) and **BD-SNR +8.1 dB** (SNR at equal bitrate).
-Encoding and decoding are about twice as slow (still under 0.1 s for 29 s of audio); memory is the same.
+Encoding and decoding are about twice as slow (still under 0.1 s per file); memory is the same.
 
 ### What each improvement adds
 
@@ -205,11 +206,53 @@ Encoding and decoding are about twice as slow (still under 0.1 s for 29 s of aud
 
 Each row is measured against the previous one. Almost all of the gain comes from the entropy coder: v1 spent most of its bits on a badly chosen Rice parameter, not on information.
 
+## Comparison with MP3, AAC and Opus
+
+Obtained with `tools/compare_mpeg.sh` (ffmpeg 6.1.1: LAME for MP3, FFmpeg's AAC encoder, libopus), at the same target bitrates (`-b` for our codec), averaged over the 7 files. All tables, the real bitrates, the per-file values and the figure `rd_mpeg.pdf` (SNR against bitrate) are in `results/mpeg/`.
+
+| target bitrate (kbps) | SNR ours (dB) | SNR MP3 (dB) | SNR AAC (dB) | SNR Opus (dB) |
+|---:|---:|---:|---:|---:|
+| 32 | **16.43** | 10.28 | 7.53 | 10.16 |
+| 64 | **24.00** | 15.16 | 11.02 | 14.55 |
+| 96 | **29.38** | 17.59 | 14.70 | 18.01 |
+| 128 | **33.56** | 19.58 | 18.63 | 20.36 |
+| 192 | **39.48** | 25.30 | 23.93 | 23.37 |
+| 256 | **44.76** | 32.41 | 28.41 | 25.90 |
+| 320 | **49.89** | 37.21 | 33.34 | 27.90 |
+
+| codec | BD-rate against ours (bits at equal SNR) | BD-SNR against ours (SNR at equal bitrate) |
+|---|---:|---:|
+| MP3 (LAME) | +148 % | −11.1 dB |
+| AAC (FFmpeg) | +196 % | −13.9 dB |
+| Opus | +215 % | −12.9 dB |
+
+Time and memory at 128 kbps, per file (20.5 s of audio on average), for the whole program:
+
+| codec | encoding time (s) | decoding time (s) | encoder memory (MB) | decoder memory (MB) |
+|---|---:|---:|---:|---:|
+| ours, `-b 128` (16 encodings to find the step) | 0.92 | 0.041 | 17.0 | 14.1 |
+| ours, one encoding with that step (`-q`) | 0.064 | — | 17.2 | — |
+| MP3 (LAME) | 0.35 | 0.061 | 51.9 | 52.1 |
+| AAC (FFmpeg) | 0.45 | 0.061 | 52.1 | 52.5 |
+| Opus | 0.24 | 0.103 | 52.3 | 52.0 |
+| ffmpeg without codec (WAV → WAV, reference) | 0.061 | — | 51.3 | — |
+
+**What this means.** At every bitrate our codec has more SNR, 6–14 dB more than the best of the three: it is designed to minimize the squared error, and the SNR measures exactly that. MP3, AAC and Opus minimize the *audible* error instead: a psychoacoustic model puts the noise where it is masked, and inaudible high frequencies are removed at low bitrates. Both lower their SNR, so they are expected to **sound better** than ours at the same bitrate despite the lower SNR (compare by ear with `tools/listen.sh`). Opus has the lowest SNR at high bitrates because it preserves the energy of each band rather than the waveform. Our decoder is the fastest; our encoder is fast in one pass, but `-b` costs 16 encodings. The memory of the ffmpeg codecs is almost all ffmpeg itself (see the reference row).
+
+**How it was measured (notes).**
+* MP3, AAC and Opus use ffmpeg's default settings for each codec and bitrate, in their usual file formats (.mp3, .m4a, .opus).
+* Alignment: these formats store the encoder delay, so ffmpeg removes it when decoding. The script checks that the decoded file is aligned with the original (shift 0) and stops otherwise; a shift of one sample would make the SNR meaningless.
+* The decoded files are cut to the exact length of the original (AAC adds padding at the end).
+* Opus always decodes at 48 kHz and is resampled to 44.1 kHz; the resampling alone has an SNR of 66 dB, so it does not limit the results.
+* Bitrates and ratios use the real file size, container headers included. The real bitrate is up to ~5 % above the target for Opus (variable bitrate) and ~1–2 % for AAC; the SNR table is at the target bitrate (this slightly favours them), while the BD-rate and the figure use the real bitrates.
+* FFmpeg's AAC encoder is weaker than the best one (fdk-aac, not in Ubuntu's ffmpeg because of its licence).
+* Times and memory include starting each program; ffmpeg alone (no codec) takes 0.06 s and 51 MB.
+
 ## Limitations and possible improvements
 
 * **RDO quantization.** The deadzone shrinks every coefficient in the same way. A rate-distortion optimized quantizer would decide, for each coefficient, between rounding down and up by minimizing `error² + λ·bits`, using the exact Rice cost in its context (the encoder already knows it). For a uniform quantizer, λ ≈ 0.115·step² (from dD/dR = −2 ln2 · D). It may gain more than the deadzone (not measured), and the decoder would not change.
 * **Arithmetic coding.** A Rice code never spends less than 1 bit on a coefficient, even when a zero is almost certain. At low rates (step ≥ 1024), an adaptive arithmetic coder with the same contexts would need about 8 % fewer bits (estimate C above).
-* **No perceptual model.** The noise is shaped only by the step, evenly over all frequencies. This is the right choice for the SNR, the measure used here, but a perceptual codec (MP3, AAC) moves the noise under the masking threshold and sounds better at the same bitrate while having a lower SNR.
+* **No perceptual model.** The noise is shaped only by the step, evenly over all frequencies. This is the right choice for the SNR, the measure used here (6–14 dB more than the best of MP3, AAC and Opus at the same bitrate), but a perceptual codec moves the noise under the masking threshold and sounds better at the same bitrate while having a lower SNR.
 * **Fixed block size.** A single N = 1024 spreads pre-echo before sharp attacks; codecs such as AAC switch to short blocks around transients.
 
 ## Tools
@@ -222,6 +265,7 @@ See `tools/README.md`.
 | `tools/compare.py` | BD-rate / BD-SNR between two `bench.sh` CSVs, and Δ per step |
 | `tools/compare_versions.sh` | v1 vs v2 and the contribution of each improvement → `results/versions/` |
 | `tools/run_experiments.sh` | entropy coder experiments and the `k` profile figure → `results/experiments/` |
+| `tools/compare_mpeg.sh` | comparison with MP3, AAC and Opus at the same bitrates, and the RD figure → `results/mpeg/` |
 | `tools/listen.sh` | WAV files to listen to: a file coded at 32 … 256 kbps and the noise of each → `results/listen/` (not in git) |
 | `tools/system_test.sh` | end-to-end tests with sanitizers (real, synthetic, invalid and corrupted files) → PASS/FAIL |
 

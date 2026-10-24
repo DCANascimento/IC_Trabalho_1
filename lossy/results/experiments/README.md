@@ -1,6 +1,5 @@
 # Lossy codec experiments
 
-Date: 2026-10-21 20:49
 Files:
 - sample01.wav
 - sample02.wav

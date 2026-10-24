@@ -49,7 +49,6 @@ done
 {
     echo "# Lossy codec experiments"
     echo
-    echo "Date: $(date '+%Y-%m-%d %H:%M')"
     echo "Files:"
     for f in "${FILES[@]}"; do echo "- $(basename "$f")"; done
     echo

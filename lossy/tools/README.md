@@ -8,6 +8,7 @@ Run them from the `lossy` folder. Results go to `lossy/results/`.
 | `compare.py` | BD-rate / BD-SNR between `bench.sh` CSVs (equal-SNR comparison), Δ per step | table on screen |
 | `compare_versions.sh` | builds v1 from the tag `lossy-v1`, measures v1, v2 and the intermediate stages | `results/versions/` |
 | `run_experiments.sh` | experiments that justify the entropy coder of v2 | `results/experiments/` |
+| `compare_mpeg.sh` | our codec vs MP3, AAC and Opus (ffmpeg) at the same bitrates: SNR, real bitrate, ratio, BD-rate, time, memory, RD figure | `results/mpeg/` (about 3 minutes) |
 | `listen.sh` | WAV files to listen to: an excerpt coded at 32 … 256 kbps, the noise of each (amplified), DCT and no Mid/Side at 64 kbps | `results/listen/<file>/` (not in git) + table |
 | `system_test.sh` | end-to-end tests (build, real and synthetic files, options, rate control, invalid input, corrupted files) with ASan/UBSan | PASS/FAIL on screen (about 2 minutes) |
 
@@ -43,6 +44,43 @@ CSV=results/lr.csv tools/bench.sh       # other CSV file
 ```
 
 The codec must be built first (`cmake --build build`).
+
+## compare_mpeg.sh
+
+```bash
+tools/compare_mpeg.sh                         # ../AudioFiles -> results/mpeg (about 3 minutes)
+tools/compare_mpeg.sh my_wavs results/mine    # other files, other results folder
+RATES="64 128 256" tools/compare_mpeg.sh      # other target bitrates (kbps)
+```
+
+Needs `ffmpeg` with `libmp3lame` and `libopus` (`sudo apt install ffmpeg`) and the codec built.
+For each file and target bitrate (default 32 … 320 kbps), it encodes with our codec (`-b`),
+MP3 (LAME), AAC (FFmpeg's encoder) and Opus, decodes, and measures as `bench.sh` does.
+It writes one CSV per codec (same columns as `bench.sh`, the target bitrate in `step`),
+`rd_average.csv`, the figure `rd_mpeg.pdf` (from `compare_mpeg.tex`) and `README.md`
+with the tables and the notes below.
+
+Notes on how the other codecs are measured, so that the comparison is fair:
+
+* **Alignment.** MP3, AAC and Opus add a delay of hundreds of samples at the start. If the
+  decoded file were shifted by even one sample, the SNR would be about 0 dB. The usual file
+  formats (.mp3, .m4a, .opus) store this delay and ffmpeg removes it when decoding; the
+  raw AAC format (.aac) does not, so it is not used. The script checks, once per codec,
+  that the best shift is 0, and stops otherwise.
+* **Length and sample rate.** The decoded file is cut to the exact length of the original
+  (AAC pads the end). Opus always decodes at 48 kHz and is resampled to the original rate;
+  the script also measures the resampling alone (66 dB SNR on `sample01`), which is far
+  above the SNR of Opus, so it does not distort the result.
+* **Bitrate.** Measured from the real file size, container headers included. Opus is
+  variable-bitrate and ends up to ~5 % above the target. The SNR table is at the target
+  bitrate; the BD-rate and the figure use the real bitrates.
+* **Encoders.** ffmpeg's default settings for each codec. FFmpeg's AAC encoder is weaker
+  than fdk-aac, which Ubuntu's ffmpeg does not include (licence).
+* **Time and memory** are for the whole program. A run of ffmpeg without any codec
+  (WAV → WAV) is measured as a reference (about 0.06 s and 51 MB, almost all of the memory
+  of the ffmpeg codecs). For our encoder, `-b` runs 16 encodings; the time of one encoding
+  with the step it found (`-q`) is measured too.
+* Only mono and stereo files are compared (MP3 has at most 2 channels).
 
 ## listen.sh
 
@@ -142,7 +180,7 @@ Output in `results/experiments/`:
 
 | File | Content |
 |---|---|
-| `README.md` | all tables in Markdown, with the date and the list of files |
+| `README.md` | all tables in Markdown, with the list of files |
 | `rice_schemes.csv`, `rice_contexts.csv` | the tables |
 | `rice_k_profile.csv`, `rice_k_profile.txt` | profile data and its summary |
 | `rice_k_profile.pdf` | figure for the report |
