@@ -1,0 +1,6 @@
+build/
+
+# Test outputs (encoded files, decoded audio, benchmark results)
+*.wav
+*.lsy
+bench.csv
