@@ -40,7 +40,7 @@
   "latex-workshop.synctex.afterBuild.enabled": true,
 
   "files.exclude": {
-    "**/build": true
+    "report/build": true
   },
 
   "editor.rulers": [

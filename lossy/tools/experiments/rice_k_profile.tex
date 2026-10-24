@@ -1,0 +1,48 @@
+% Figure: Rice parameter along the coefficients of one MDCT block.
+% Reads the CSV written by rice_k_profile; its path is given in \csvfile:
+%   pdflatex "\def\csvfile{path/rice_k_profile.csv}\input{rice_k_profile.tex}"
+% (tools/run_experiments.sh does this and saves the PDF in the results folder).
+\documentclass[border=4pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepgfplotslibrary{groupplots}
+\pgfplotsset{compat=1.17}
+
+\providecommand{\csvfile}{rice_k_profile.csv}
+
+\begin{document}
+\begin{tikzpicture}
+\pgfplotstableread[col sep=comma]{\csvfile}\profile
+\begin{groupplot}[
+    group style={group size=1 by 3, vertical sep=0.45cm, xlabels at=edge bottom,
+                 xticklabels at=edge bottom},
+    width=15cm, xmin=0, xmax=1024,
+    xlabel={coefficient index (frequency)},
+    grid=major, grid style={gray!20},
+    legend style={font=\footnotesize, at={(0.99,0.97)}, anchor=north east},
+    tick label style={font=\footnotesize}, label style={font=\small},
+]
+% 1) magnitudes of the quantized coefficients (zeros are not shown on the log axis)
+\nextgroupplot[height=4.2cm, ymode=log, ylabel={$|x_i|$}, unbounded coords=discard]
+\addplot[only marks, mark=*, mark size=0.6pt, blue!70!black]
+    table[x=i, y expr={\thisrow{magnitude} > 0 ? \thisrow{magnitude} : nan}]{\profile};
+
+% 2) Rice parameter: one per block (v1) vs from the context (v2) vs best local
+\nextgroupplot[height=4.6cm, ylabel={Rice parameter $k$}, ymin=-0.5]
+\addplot[const plot, orange!80!black, line width=1.6pt, opacity=0.6] table[x=i, y=k_local]{\profile};
+\addlegendentry{best local $k$ (16 coeff.)}
+\addplot[const plot, blue!70!black, thin] table[x=i, y=k_context]{\profile};
+\addlegendentry{$k$ from context (v2)}
+\addplot[red!80!black, very thick] table[x=i, y=k_block]{\profile};
+\addlegendentry{one $k$ per block (v1)}
+
+% 3) cumulative coded size
+\nextgroupplot[height=4.2cm, ylabel={cumulative bits}, legend pos=south east]
+\addplot[red!80!black, very thick] table[x=i, y=bits_block]{\profile};
+\addlegendentry{one $k$ per block (v1)}
+\addplot[blue!70!black, very thick] table[x=i, y=bits_context]{\profile};
+\addlegendentry{$k$ from the context (v2)}
+\end{groupplot}
+\end{tikzpicture}
+\end{document}

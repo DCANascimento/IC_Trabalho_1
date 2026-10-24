@@ -10,6 +10,10 @@ struct EncoderParams
     TransformType transform = TransformType::Mdct;
     size_t blockSize = 1024;   // N: coefficients per block (= hop size)
     double step = 16.0;        // quantization step, in units of a 16-bit sample
+    double targetKbps = 0;     // if > 0, the step is chosen to reach this bitrate
+    double rounding = 0.35;    // index = floor(|X| / step + rounding); < 0.5 gives a deadzone
+                               // (0.35 had the lowest BD-rate, with the centroid offsets)
+    bool centroid = true;      // store reconstruction offsets (decode at the interval centroid)
     bool midSide = true;       // stereo: allow Mid/Side coding (chosen per block)
     bool verbose = false;
 };

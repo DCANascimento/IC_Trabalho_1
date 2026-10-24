@@ -6,17 +6,20 @@
 # Usage:   tools/bench.sh [audio_folder] [step ...]
 # Example: tools/bench.sh ../AudioFiles 16 64 256
 #          ENC_OPTS="-t dct" tools/bench.sh      (extra encoder options)
+#          BIN=other/build tools/bench.sh        (programs of another version)
 #
-# The per-file results are also saved in bench.csv (or in $CSV).
+# The per-file results are also saved in results/bench.csv (or in $CSV).
 
 set -euo pipefail
 
-BIN="$(cd "$(dirname "$0")/.." && pwd)/build"
-DIR="${1:-../AudioFiles}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"   # the lossy folder
+BIN="${BIN:-$ROOT/build}"   # folder with the programs (another version can be measured)
+DIR="${1:-$ROOT/../AudioFiles}"
 shift || true
 STEPS=("$@")
 [ ${#STEPS[@]} -eq 0 ] && STEPS=(16 32 64 128 256 512 1024)
-CSV="${CSV:-bench.csv}"
+CSV="${CSV:-$ROOT/results/bench.csv}"
+mkdir -p "$(dirname "$CSV")"
 ENC_OPTS="${ENC_OPTS:-}"
 
 TMP="$(mktemp -d)"
@@ -63,7 +66,7 @@ awk -F, 'NR > 1 {
         if (!($2 in seen)) { seen[$2] = 1; order[++count] = $2 }
     }
     END {
-        print "| step | kbps | ratio | SNR (dB) | enc (s) | dec (s) | enc mem (MB) | dec mem (MB) |"
+        print "| step q | bitrate (kbps) | compression ratio | SNR (dB) | encoding time (s) | decoding time (s) | encoder memory (MB) | decoder memory (MB) |"
         print "|---:|---:|---:|---:|---:|---:|---:|---:|"
         for (i = 1; i <= count; i++) {
             q = order[i]; c = n[q]

@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
             maxError = std::max(maxError, std::abs(e));
         }
 
-        printRow(std::to_string(c).c_str(), signal, noise, maxError, frames);
+        printRow(std::to_string(c+1).c_str(), signal, noise, maxError, frames);
 
         totalSignal += signal;
         totalNoise += noise;
