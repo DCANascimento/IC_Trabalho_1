@@ -21,7 +21,7 @@ The procedure was as follows:
 \begin{enumerate}
     \item It read the 20 original WAV files in the audio folder.
 
-    \item It executed the codec and compressor programs---FLAC, WavPack, TAK, Zstd, XZ/LZMA, and CLSS---through PowerShell. To do this, the file \texttt{"benchmark-comparacao.ps1"} started the codecs and compressors, measured them, and recorded the results, logging the times, sizes, working set peaks, configurations, and fidelity checks.
+    \item It executed the codec and compressor programs---FLAC, WAVPack, TAK, Zstd, XZ/LZMA, and CLSS---through PowerShell. To do this, the file \texttt{"benchmark-comparacao.ps1"} started the codecs and compressors, measured them, and recorded the results, logging the times, sizes, working set peaks, configurations, and fidelity checks.
 
     \item It read each WAV file, compressed it, and decompressed it, writing the obtained data to \texttt{"benchmark-comparacao.csv"}.
 

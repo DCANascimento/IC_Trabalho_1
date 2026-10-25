@@ -50,7 +50,7 @@ We first decided to make a general evaluation of other lossless audio codecs, in
         &
         \begin{itemize}[leftmargin=*, nosep]
             \item Similar to better compression than FLAC.
-            \item Codificação e descodificação muito rápidas.
+            \item Very fast encoding and decoding.
             \item Supports an hybrid mode.
             \item Supports streaming.
             \item Open source.
@@ -118,7 +118,6 @@ We first decided to make a general evaluation of other lossless audio codecs, in
 
     \vspace{2mm}
     \small
-    \noindent\textit{Note:} ALAC (Apple Lossless Audio Codec) is just an Apple alternative of FLAC.
 \end{table}
 
 \vspace{10pt}
@@ -127,22 +126,22 @@ We first decided to make a general evaluation of other lossless audio codecs, in
 This part of the work was split into a few submodules:
 
 \begin{itemize}
-    \item \textbf{wav.cpp} allows us to read/write a wav file. From a wav file, besides the PCM audio samples that are later encoded, we also take metadata, such as sample rate, number of channels, bits per sample and audio format. During decoding, this data is written back in, alongside the original audio samples.
+    \item \textbf{wav.cpp} allows us to read/write a WAV file. From a WAV file, besides the PCM audio samples that are later encoded, we also take metadata, such as sample rate, number of channels, bits per sample and audio format. During decoding, this data is written back in, alongside the original audio samples.
     
-    \item \textbf{predictor.cpp} takes the raw vector and through residual calculation it reduces the space required to store the data. (Write specifics?)
+    \item \textbf{predictor.cpp} takes the raw samples values, and by applying a prediction algorythm based on previous samples, it can reduced large amplitude values to smaller, residual ones, to increase compression.
      
     \item \textbf{zigzag.cpp} applies the zigzag method to convert signed integers into unsigned integers, and vice versa. This simply serves to enable rice encoding later on, as it only takes in positive integers.
     
     \item \textbf{rice.cpp} takes the values transformed by the zigzag, and converts them to bits, and vice versa. For this encoding method, a difficulty that arised was the decision of the \textbf{k} variable. This variable is what decides the length of the bit representation of each samples. However, there is no single value of \textbf{k} that always garantees the shortest possible encoding, and sometimes even the best value ends up longer than the original PCM stream. Given this, our code has a range of \textbf{k} values that are tested and compared (including the original samples), and the most efficient compresion variable is kept and used.
 
-    \item \textbf{bitstream.cpp} takes the values transformed by the zigzag, and converts them to bits. Besides the compressed sample values, it also converts and stores important data for decoding, like the \textbf{k} variable obtained in the rice method, 
+    \item \textbf{bitstream.cpp} takes the values transformed by the zigzag method, and converts them to bits. Besides the compressed sample values, it also converts and stores important data for decoding, like the \textbf{k} variable obtained in the rice method.
 \end{itemize}
 
 Below, in Fig. \ref{fig:lossless_diagram}, is a diagram we made for clarity.
 
 \begin{figure}[H]
 \centering
-  \includegraphics[width=1.0\linewidth, height=10cm, keepaspectratio]{lossless_diagram.png}
+  \includegraphics[width=1.0\linewidth, height=14cm, keepaspectratio]{lossless_diagram.png}
   \caption{Diagram of the Encoding/Decoding Pipeline of the lossless codec}
   \label{fig:lossless_diagram}
 \end{figure}
@@ -151,7 +150,7 @@ Below, in Fig. \ref{fig:lossless_diagram}, is a diagram we made for clarity.
 \vspace{10pt}
 \section{Model Comparison}
 
-To compare our model with the state-of-the-art ones, we decided to test them against an "Audio\_Datasets" folder (provisioned by the teachers). It contains 20 wav files
+To compare our codec with state-of-the-art codecs, all of them were evaluated on the \texttt{Audio\_Datasets} folder provided by the teachers. It contains 20 WAV files
 
 We have chosen the following configurations for each model:
 
@@ -168,7 +167,7 @@ We have chosen the following configurations for each model:
 
 \begin{table}[htbp]
     \centering
-    \caption{Comparison of lossless audio compression codecs}
+    \caption{Comparison of lossless audio compression models}
     \label{tab:codec_comparison}
     \small
     \begin{tabular}{lrrrrrrr}
@@ -197,7 +196,7 @@ We have chosen the following configurations for each model:
         & 3,358; 37,24
         & 9,12 / 4,23 MiB \\
 
-        WavPack
+        WAVPack
         & 50 609 404 B
         & 40,47\%
         & 59,53\%
@@ -245,7 +244,7 @@ Given our obtained results, we decided on some changes that could potentially im
     
     \item \textbf{Predictor adjustment:} By using a second order predictor, as opposed to first order, we can model smooth waveforms by tracking signal trends and slopes rather than assuming a flat line, resulting in significantly smaller residuals and improved compression efficiency
         
-    \item \textbf{Block encoding:} Before, we would apply the whole enconding strategy to the entire sample field, all with the same parameters. Now, we have decided to split the samples into blocks, and each block now has its own compression parameters. So each block can either have L/R or MID/SIDE transformation, choose between first or second order predictor, define a favorable k variable for rice encoding, and decide whether to do said encoding or keep the raw PCM samples (for all of these, each block is tested at runtime and the best result is chosen)
+    \item \textbf{Block encoding:} Before, we would apply the whole enconding strategy to the entire sample field, all with the same parameters. Now, we have decided to split the samples into blocks, and each block now has its own compression parameters. So each block can either have L/R or MID/SIDE transformation, choose between first or second order predictor, define a favorable \textbf{k} variable for rice encoding, and decide whether to do said encoding or keep the raw PCM samples (for all of these, each block is tested at runtime and the best result is chosen)
 
 \end{enumerate}
 

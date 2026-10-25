@@ -76,7 +76,7 @@ Changed to accept either a file or a directory, and to stop with
 a clear message in other cases \\
 
 Alignment in the Comparison with MPEG &
-Add an offset search to wav\_snr (MP3/AAC/Opus introduce a delay
+Add an offset search to WAV\_snr (MP3/AAC/Opus introduce a delay
 at the beginning) &
 We tested this first: with .mp3, .m4a and .opus, ffmpeg already
 removes the delay (offset 0); only raw .aac was offset by
@@ -93,8 +93,8 @@ have the script verify alignment, stopping if it is not 0 \\
 No result was accepted simply because the AI said so:
 
 \begin{itemize}
-    \item \textbf{Independent Tool:} The SNR measured by wav\_snr
-    in the lossy codec was compared with our wav\_cmp from Part I,
+    \item \textbf{Independent Tool:} The SNR measured by WAV\_snr
+    in the lossy codec was compared with our WAV\_cmp from Part I,
     and the values match.
 
     \item \textbf{Lossless Limit:} With the minimum step, 8-bit and

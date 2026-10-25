@@ -12,6 +12,8 @@ are installed:
     for GUI and terminal playback; \texttt{ffplay} is an additional
     fallback for the GUI
     \item MATLAB, required only for the \texttt{.m} prototypes
+    \item \texttt{cmake} >= 3.20, only for the lossy codec (Part III)
+    \item \texttt{python3}, only for the lossy codec's test and measurement scripts
 \end{itemize}
 
 Most of the required dependencies can be installed using the following
@@ -72,6 +74,13 @@ This creates the encoder and decoder, which can be tested using:
 ./build-user/wav_lossless_dec compressed.clss restored.wav
 \end{verbatim}
 
+\noindent\textit{Note:} For the final version of the codec, the zip file may need to be extracted using \texttt{git lfs}. For that, run these commands:
+
+\begin{verbatim}
+git lfs install
+git lfs pull
+\end{verbatim}
+
 
 \subsection{Lossy Audio Codec}
 
@@ -110,9 +119,9 @@ For the encoder, the options that can be run include:
     
     \item \textbf{-z <r> | } to set the value for quantizer rounding;
     
-    \item \textbf{--no-centroid | } to decode at the middle of each interval;
+    \item \textbf{-{}-no-centroid | } to decode at the middle of each interval;
 
-    \item \textbf{--no-ms | } for stereo, to code using L/R, instead of MID/SIDE
+    \item \textbf{-{}-no-ms | } for stereo, to code using L/R, instead of MID/SIDE
     
     \item \textbf{-v | } to print statistics in the end.
 

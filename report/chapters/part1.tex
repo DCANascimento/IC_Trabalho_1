@@ -5,23 +5,23 @@
 For the first part, we started by learning the intricacies of audio waveform manipulation by creating some simple files. These include:
 
 \begin{itemize}
-    \item \texttt{wav\char`_hist:} Given an audio wav file, this program displays an histograms for various of its channels.
+    \item \texttt{wav\char`_hist:} Given an audio WAV file, this program displays an histograms for various of its channels.
 
-    \item \texttt{wav\char`_quant:} This program takes an audio file and creates a new version that uses less bits (through quantization)
+    \item \texttt{wav\char`_quant:} This program takes an audio file and creates a new version that uses less bits (through quantization).
 
-    \item \texttt{wav\char`_cmp:} This program takes a quantized audio and it s original form, and compares them using metrics like
+    \item \texttt{wav\char`_cmp:} This program takes a quantized audio and its original form, and compares them using metrics like the average mean squared error, the maximum absolute error and the signal-to-noise ratio.
 
     \item \texttt{wav\char`_effects:} After choosing an audio file, this last program gives a selection of audio effect options, applies them to the given audio and plays them.
 \end{itemize}
 
-We began the project by testing operations on the audio wav files by using matlab, since we were more used to it, and it helped us get a better understanding of the audio format. Afterwards, we decided to take our matlab implementations and convert them to C, since our priority was processing times, we wanted a language that gave us more direct control over memory allocation. However, by the end, we translated the code done to C++, since it was simpler to work with, gave us similar performance results, and simplified the whole project, since for the codecs later on C++ was the language we already started with.
+We began the project by testing operations on the audio WAV files by using , since we were more used to it, and it helped us get a better understanding of the audio format. Afterwards, we decided to take our  implementations and convert them to C, since our priority was processing times, we wanted a language that gave us more direct control over memory allocation. However, by the end, we translated the code done to C++, since it was simpler to work with, gave us similar performance results, and simplified the whole project, since for the codecs later on C++ was the language we already started with.
 
 The main function files are in the /src folder, while the execution files that are ran in the terminal exist in the /programs folder.
 
 \vspace{10pt}
 \section{Reading/Writing a WAV}
 
-In the first step, we immediately encountered a major difference between matlab and C. In matlab there are functions that automatically extract the data from the wav in an array with 2 rows, each one already representing a channel, while in C, all that we get is a byte array, so we have to extract the relevant chunks:
+In the first step, we immediately encountered a major difference between MATLAB and C. In MATLAB there are functions that automatically extract the data from the WAV in an array with 2 rows, each one already representing a channel, while in C, all that we get is a byte array, so we have to extract the relevant chunks:
 
 \begin{enumerate}
 
@@ -36,14 +36,14 @@ In the first step, we immediately encountered a major difference between matlab 
 \vspace{10pt}
 \section{Plotting Histograms}
 
-This part of the project simply served to help us understand the structure of the wav files we would be working with as a baseline. We simply read the wav files, take their samples, separate the audio tracks into left and right, calculate the MID and SIDE channels (by taking the average and difference of the two, respectively), and create the histograms, which display the distribution of sample amplitudes for each channel.
+This part of the project simply served to help us understand the structure of the WAV files we would be working with as a baseline. We simply read the WAV files, take their samples, separate the audio tracks into left and right, calculate the MID and SIDE channels (by taking the average and difference of the two, respectively), and create the histograms, which display the distribution of sample amplitudes for each channel.
 
 \vspace{10pt}
 \section{Audio Quantization}
 
 For the quantization of a given audio file, we choose a value between 1 and 16 bits (16 bits is the original format, while 1 is the bare minimum). Then taking the number of bits selected and the total number of samples, we can calculate the total expected size of the new quantized audio array and, one by one, calculate the quantized value of each sample by rounding the value of said sample down.
 
-However, for this part of the project, since we end up writing the wav files using a 16 bit representation, independent of any quantization done, the actual size of the new file is actually the same.
+However, for this part of the project, since we end up writing the WAV files using a 16 bit representation, independent of any quantization done, the actual size of the new file is actually the same.
 
 For the WAV writing part, we simply do the reverse of the reader. We create the RIFF header (RIFF ID + file size + WAVE ID), we recreate the FMT chunk and the DATA chunk (which in theory have the same values, since the only modification done was to the data size in the DATA chunk, which was then reverted).
 
