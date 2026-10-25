@@ -98,6 +98,8 @@ Similarly to the previous codec, this one was split into:
     \item \textbf{bitstream.hpp} provides low-level bit manipulation via `BitWriter` and `BitReader`. It packs variable-length Rice codes, the `last` non-zero position markers, and stereo Mid/Side flags tightly into the output byte stream. It also contains calls the functions for the zigzag and rice encoding operations.
     
     \item \textbf{bytes.hpp} provides lightweight utility functions and helper classes for low-level binary file I/O and little-endian data manipulation in memory.
+    
+    \item \textbf{wav\_lossy\_enc.cpp / wav\_lossy\_dec.cpp / wav\_snr.cpp} are the three main programs for execution.
 \end{itemize}
 
 A model of the first implementation of the pipeline is shown in Figure \ref{fig:lossy_diagram}
@@ -112,7 +114,77 @@ A model of the first implementation of the pipeline is shown in Figure \ref{fig:
 \vspace{10pt}
 \section{Model Comparison}
 
-Next came the model comparison stage, and in Table \ref{tab:lossy-codec-comparison}, we can observe the results obtained from the 7 audio files provided (in the AudioFiles folder). Our codec ended up performing drastically better in terms of memory usage than its competitors, as well as doing better decoding time. However, and most importantly, it achieves a higher SNR per bitrate, which was what we were hoping for.
+Next came the model comparison stage, and in Table \ref{tab:lossy-codec-comparison} and Table \ref{tab:lossy_codec_comparison}, we can observe the results obtained from the 7 audio files provided (in the AudioFiles folder). Our codec ended up performing drastically better in terms of memory usage than its competitors, as well as doing better decoding time. However, and most importantly, it achieves a higher SNR per bitrate, which was what we were hoping for.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Comprehensive performance, memory, and quality comparison at 128 kbps}
+    \label{tab:lossy-codec-comparison}
+
+    \renewcommand{\arraystretch}{1.3}
+    \setlength{\tabcolsep}{4pt}
+
+    \begin{tabularx}{\textwidth}{
+        @{}
+        >{\raggedright\arraybackslash}p{0.22\textwidth}
+        >{\centering\arraybackslash}X
+        >{\centering\arraybackslash}X
+        >{\centering\arraybackslash}X
+        >{\centering\arraybackslash}X
+        >{\centering\arraybackslash}X
+        >{\centering\arraybackslash}X
+        @{}
+    }
+    \toprule
+    \textbf{Codec / Config} & \textbf{Enc. Time (s)} & \textbf{Dec. Time (s)} & \textbf{Enc. Mem (MB)} & \textbf{Dec. Mem (MB)} & \textbf{SNR (dB) at 128k} & \textbf{BD-Rate} \\
+    \midrule
+
+        \textbf{Ours (-b 128)} 
+        & 0.92 
+        & 0.041 
+        & 17.0 
+        & 14.1 
+        & 33.56 
+        & Baseline \\
+
+        \addlinespace
+        \midrule
+
+        \textbf{MP3 (LAME)} 
+        & 0.35 
+        & 0.061 
+        & 51.9 
+        & 52.1 
+        & 19.58 
+        & +148 \% \\
+
+        \addlinespace
+        \midrule
+
+        \textbf{AAC (FFmpeg)} 
+        & 0.45 
+        & 0.061 
+        & 52.1 
+        & 52.5 
+        & 18.63 
+        & +196 \% \\
+
+        \addlinespace
+        \midrule
+
+        \textbf{Opus} 
+        & 0.24 
+        & 0.103 
+        & 52.3 
+        & 52.0 
+        & 20.36 
+        & +215 \% \\
+    \bottomrule
+    \end{tabularx}
+    \vspace{2mm}
+    \small
+\end{table}
+
 
 \begin{table}[htbp]
     \centering
@@ -146,7 +218,7 @@ Next came the model comparison stage, and in Table \ref{tab:lossy-codec-comparis
     \end{tabular}
 \end{table}
 
-\vspace{10pt}
+\vspace{40pt}
 \section{Final Adjustments}
 
 Like with the lossless encoder, we were already expecting that block encoding would end up being implemented, to improve our compression results, as well as splitting both channels (in the case of stereo) into MID and SIDE channels. So for the final version of the lossy codec, besides those changes, we have also identified and implemented other possible improvements:

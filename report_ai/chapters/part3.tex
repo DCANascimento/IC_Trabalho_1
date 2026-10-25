@@ -49,15 +49,21 @@ With the same step, the SNR differed by 0.5 dB (deadzone) &
 Comparison was changed to use the same SNR (BD-rate, Bjøntegaard
 method): $-32.7\,\%$ in bits \\
 
+\midrule
+
 Use of Mid/Side in the README &
 ``Used in 70--99 \% of blocks, never in sample02'' &
 Measured using the encoder statistics (-v) &
 Wrong: 30--96 \%, and $\sim$3 \% in sample02. Corrected \\
 
+\midrule
+
 RDO Quantization &
 Started implementing it immediately after the deadzone &
 We interrupted it: it had not been requested and the step was closed &
 Left as future work, with the explicit indication ``not measured'' \\
+
+\midrule
 
 Automated Test Criterion &
 ``SNR $>$ 30 dB'' with the default step &
@@ -67,6 +73,8 @@ Incorrect criterion: SNR depends on volume. Replaced with an error
 limit derived from the step, MSE $\leq (1-r)^2 \cdot q^2/3$,
 justified by measurements \\
 
+\midrule
+
 Test Script Argument &
 Accepted only a directory &
 With a file, it said ``no WAVs'' and skipped 4 groups of tests
@@ -74,6 +82,8 @@ without warning; the AI tried to guess other causes before seeing
 the output &
 Changed to accept either a file or a directory, and to stop with
 a clear message in other cases \\
+
+\midrule
 
 Alignment in the Comparison with MPEG &
 Add an offset search to WAV\_snr (MP3/AAC/Opus introduce a delay
