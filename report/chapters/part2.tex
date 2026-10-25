@@ -134,10 +134,42 @@ This part of the work was split into a few submodules:
     
     \item \textbf{rice.cpp} takes the values transformed by the zigzag, and converts them to bits, and vice versa. For this encoding method, a difficulty that arised was the decision of the \textbf{k} variable. This variable is what decides the length of the bit representation of each samples. However, there is no single value of \textbf{k} that always garantees the shortest possible encoding, and sometimes even the best value ends up longer than the original PCM stream. Given this, our code has a range of \textbf{k} values that are tested and compared (including the original samples), and the most efficient compresion variable is kept and used.
 
-    \item \textbf{bitstream.cpp} takes the values transformed by the zigzag method, and converts them to bits. Besides the compressed sample values, it also converts and stores important data for decoding, like the \textbf{k} variable obtained in the rice method.
+    \item \textbf{bitstream.cpp} takes the values transformed by the zigzag method, and converts them to bytes. Besides the compressed sample values, it also converts and stores important data for decoding, like the \textbf{k} variable obtained in the rice method.
+    
+    \item \textbf{format.cpp} grabs the data prepared by the bistream, and writes out the CLSS file. It also contains the logic for the reading of the CLSS.
 \end{itemize}
 
-Below, in Fig. \ref{fig:lossless_diagram}, is a diagram we made for clarity.
+Below, in Fig. \ref{fig:lossless_diagram}, is a diagram we made for clarity. Later into development, the predictor logic, as well as the method handling of the \texttt{zigzag.cpp} and the \texttt{rice.cpp} we moved to a singular \texttt{block\_codec.cpp} file. In short, the compression and decompression code process can be described with the following sequences:
+
+\paragraph{Compression pipeline:}
+\[
+\begin{aligned}
+&\texttt{main.cpp} \; (\texttt{runApplication()} \to \texttt{compressFile()})\\
+&\to \texttt{wav.cpp} \; (\texttt{loadWavInfo()}: \text{samples, metadata, } \texttt{WavLayout})\\
+&\to \texttt{block\_codec.cpp} \; (\texttt{encodeBlockPayload()}: \text{block partitioning and encoding selection})\\
+&\quad \begin{cases}
+\texttt{makeResidualValues()}: \text{channel modes, first-/second-order prediction, ZigZag}\\
+\texttt{chooseRiceK()} \to \texttt{riceEncode()} \to \texttt{BitWriter}\\
+\text{Raw PCM per block, if Rice does not reduce the size}
+\end{cases}\\
+&\to \texttt{format.cpp} \; (\texttt{writeCompressedFile()})
+\end{aligned}
+\]
+
+\paragraph{Decompression pipeline:}
+\[
+\begin{aligned}
+&\texttt{main.cpp} \; (\texttt{decompressFile()})\\
+&\to \texttt{format.cpp} \; (\texttt{readCompressedFile()}: \text{header validation and prefix, suffix, and payload extraction})\\
+&\to \texttt{block\_codec.cpp} \; (\texttt{decodeBlockPayload()}: \text{record parsing and block decoding})\\
+&\quad \begin{cases}
+\text{Rice block: } \texttt{riceDecode()} \text{ using } \texttt{BitReader}\\
+\quad \to \texttt{zigzagDecode()} \to \text{inverse prediction and, if needed, mid/side decoding}\\
+\text{Raw PCM block: direct sample reconstruction}
+\end{cases}\\
+&\to \texttt{wav.cpp} \; (\texttt{saveWavPreservingLayout()})
+\end{aligned}
+\]
 
 \begin{figure}[H]
 \centering
