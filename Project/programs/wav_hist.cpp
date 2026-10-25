@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#include <iomanip>
 #include <sys/types.h>
 
 #ifndef _WIN32
@@ -18,51 +19,102 @@ extern "C" {
 #include "histogram.h"
 }
 
-// Function to save a histogram as a PPM image (P3 format)
-void save_histogram_ppm(const std::string &filename, const Histogram *hist, int img_width = 800, int img_height = 400) {
-    struct RGB { unsigned char r, g, b; };
-    std::vector<std::vector<RGB>> image(img_height, std::vector<RGB>(img_width, {255, 255, 255}));
-
-    int num_bins = hist->num_bins; 
-    long max_val = 1;
-    for (int i = 0; i < num_bins; ++i) {
-        if (hist->counts[i] > max_val) {
-            max_val = hist->counts[i];
-        }
-    }
-
-    double col_width = static_cast<double>(img_width) / num_bins;
-    for (int i = 0; i < num_bins; ++i) {
-        int bar_height = static_cast<int>((static_cast<double>(hist->counts[i]) / max_val) * (img_height - 50));
-        int start_x = static_cast<int>(i * col_width);
-        int end_x = static_cast<int>((i + 1) * col_width);
-
-        // Draw vertical bar (blue color: RGB{0, 100, 255})
-        for (int y = img_height - 1 - bar_height; y < img_height; ++y) {
-            for (int x = start_x; x < end_x && x < img_width; ++x) {
-                image[y][x] = {0, 100, 255};
-            }
-        }
-    }
-
-    // Write to the PPM file
+// Function to save a histogram as a professional SVG graph
+void save_histogram_svg(const std::string &filename, const Histogram *hist, const std::string &title, double min_val = -1.0, double max_val = 1.0, int width = 1000, int height = 400) {
     std::ofstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Error opening file for writing: " << filename << std::endl;
         return;
     }
 
-    file << "P3\n" << img_width << " " << img_height << "\n255\n";
-    for (int y = 0; y < img_height; ++y) {
-        for (int x = 0; x < img_width; ++x) {
-            file << static_cast<int>(image[y][x].r) << " "
-                 << static_cast<int>(image[y][x].g) << " "
-                 << static_cast<int>(image[y][x].b) << " ";
+    int num_bins = hist->num_bins; 
+    long max_count = 1;
+    for (int i = 0; i < num_bins; ++i) {
+        if (hist->counts[i] > max_count) {
+            max_count = hist->counts[i];
         }
-        file << "\n";
     }
+
+    // Graph layout margins
+    int margin_left = 70;
+    int margin_right = 30;
+    int margin_top = 40;
+    int margin_bottom = 60;
+
+    int plot_width = width - margin_left - margin_right;
+    int plot_height = height - margin_top - margin_bottom;
+
+    // SVG Header
+    file << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" << width << "\" height=\"" << height << "\">\n";
     
-    std::cout << "Generated PPM image: " << filename << std::endl;
+    // Background
+    file << "  <rect width=\"100%\" height=\"100%\" fill=\"#ffffff\"/>\n";
+
+    // Title
+    file << "  <text x=\"" << width / 2 << "\" y=\"25\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"16\" font-weight=\"bold\" fill=\"#333\">" << title << "</text>\n";
+
+    // Axes lines
+    file << "  <line x1=\"" << margin_left << "\" y1=\"" << (height - margin_bottom) << "\" x2=\"" << (width - margin_right) << "\" y2=\"" << (height - margin_bottom) << "\" stroke=\"#333\" stroke-width=\"1.5\"/>\n";
+    file << "  <line x1=\"" << margin_left << "\" y1=\"" << margin_top << "\" x2=\"" << margin_left << "\" y2=\"" << (height - margin_bottom) << "\" stroke=\"#333\" stroke-width=\"1.5\"/>\n";
+
+    // Y-Axis Grid Lines & Labels (5 intervals)
+    int num_y_ticks = 5;
+    for (int i = 0; i <= num_y_ticks; ++i) {
+        double val = static_cast<double>(max_count * i) / num_y_ticks;
+        int y_pos = (height - margin_bottom) - static_cast<int>((static_cast<double>(i) / num_y_ticks) * plot_height);
+        
+        if (i > 0) {
+            file << "  <line x1=\"" << margin_left << "\" y1=\"" << y_pos << "\" x2=\"" << (width - margin_right) << "\" y2=\"" << y_pos << "\" stroke=\"#f0f0f0\" stroke-dasharray=\"4,4\"/>\n";
+        }
+        file << "  <text x=\"" << (margin_left - 10) << "\" y=\"" << (y_pos + 4) << "\" text-anchor=\"end\" font-family=\"Arial\" font-size=\"11\" fill=\"#666\">" << static_cast<long>(val) << "</text>\n";
+    }
+
+    // X-Axis Ticks & Labels (every 0.1)
+    double tick_step = 0.1;
+    for (int step_idx = 0; ; ++step_idx) {
+        double val = min_val + step_idx * tick_step;
+        if (val > max_val + 1e-9) break;
+
+        int x_pos = margin_left + static_cast<int>((val - min_val) / (max_val - min_val) * plot_width);
+
+        // Tick mark
+        file << "  <line x1=\"" << x_pos << "\" y1=\"" << (height - margin_bottom) 
+             << "\" x2=\"" << x_pos << "\" y2=\"" << (height - margin_bottom + 6) 
+             << "\" stroke=\"#333\" stroke-width=\"1\"/>\n";
+
+        // Vertical grid line for major intervals (e.g., every 0.2 or 0.5 to keep it clean, or keep all)
+        if (step_idx > 0 && step_idx < static_cast<int>((max_val - min_val) / tick_step)) {
+            // Light grid line every 0.2 units (even steps) to prevent grid clutter
+            if (step_idx % 2 == 0) {
+                file << "  <line x1=\"" << x_pos << "\" y1=\"" << margin_top 
+                     << "\" x2=\"" << x_pos << "\" y2=\"" << (height - margin_bottom) 
+                     << "\" stroke=\"#f5f5f5\" stroke-dasharray=\"2,2\"/>\n";
+            }
+        }
+
+        // Text label for every 0.1 value
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "%.1f", val);
+        file << "  <text x=\"" << x_pos << "\" y=\"" << (height - margin_bottom + 20) 
+             << "\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"10\" fill=\"#666\">" << buf << "</text>\n";
+    }
+
+    // Draw Histogram Bars
+    double bin_width_px = static_cast<double>(plot_width) / num_bins;
+    for (int i = 0; i < num_bins; ++i) {
+        double bar_h = (static_cast<double>(hist->counts[i]) / max_count) * plot_height;
+        double x_pos = margin_left + i * bin_width_px;
+        double y_pos = (height - margin_bottom) - bar_h;
+
+        file << "  <rect x=\"" << x_pos << "\" y=\"" << y_pos << "\" width=\"" << std::max(1.0, bin_width_px - 0.5) << "\" height=\"" << bar_h << "\" fill=\"#0064ff\" opacity=\"0.85\"/>\n";
+    }
+
+    // Axis Labels
+    file << "  <text x=\"" << (margin_left + plot_width / 2) << "\" y=\"" << (height - 10) << "\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"#333\">Amplitude Value</text>\n";
+    
+    file << "</svg>\n";
+
+    std::cout << "Generated SVG graph: " << filename << std::endl;
 }
 
 int main(int argc, char **argv)
@@ -131,11 +183,10 @@ int main(int argc, char **argv)
 
     create_histograms(&audio, bits, &left, &right, &mid, &side);
 
-    // Saves Histograms to a ppm file inside the subfolder
-    save_histogram_ppm(subfolder + "/histogram_left.ppm", &left);
-    save_histogram_ppm(subfolder + "/histogram_right.ppm", &right);
-    save_histogram_ppm(subfolder + "/histogram_mid.ppm", &mid);
-    save_histogram_ppm(subfolder + "/histogram_side.ppm", &side);
+    save_histogram_svg(subfolder + "/histogram_left.svg", &left, "Left Channel Histogram", -1.0, 1.0);
+    save_histogram_svg(subfolder + "/histogram_right.svg", &right, "Right Channel Histogram", -1.0, 1.0);
+    save_histogram_svg(subfolder + "/histogram_mid.svg", &mid, "Mid Channel Histogram", -1.0, 1.0);
+    save_histogram_svg(subfolder + "/histogram_side.svg", &side, "Side Channel Histogram", -1.0, 1.0);
 
     // Free memory of the histograms
     histogram_free(&left);

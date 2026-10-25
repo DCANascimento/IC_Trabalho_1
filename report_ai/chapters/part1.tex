@@ -1,0 +1,21 @@
+\chapter{Part I}
+
+The general use of AI throughout the whole project involved code translation, project architecture design evaluation, report correctness and general concept clarification.
+
+For example, when it came to the simple starting decision of which programming language to use, despite the fact that we already had some understading of matlab and its shortcomings for efficient performance, we started with it just to experiment, and later, with the help of AI (more specifically models like Copilot and Claude), we reached our conclusion that C++ would be the best programming language to work with later on. We were also suggested Rust, but it was seemingly less beginner friendly, and its only advantages included strict but safer thread and memory management, which we were willing to trade off.
+
+For the first part, as we started by learning how to work with WAV files, and how they are structured, for later manipulation, AI was used to help better visualize this file structure. Among this, other problems we faced include:
+
+\begin{enumerate}
+
+    \item \textbf{Translating Matlab Code:} Given our initial prototypes, and to make work start more efficiently, after understading the types of operations done, we used AI models like Gemini to quickly obtain C versions of the files (this was an early mistake, as in a prompt we mistook C for C++, but this error was later remedied).
+    
+    \item \textbf{Makefile:} This was a simply to make a file that would allow the programs to more easily run inside any operating system, and with a more streamlined initiation process.
+    
+    \item \textbf{Creating an UI:} Specifically for the first part, we believed that we needed to have a user interface that allowed a user to interact with the main functionalities developed (histogram plotting, audio effects...). However, even after being clarified that it wasn't necessary, we decided to make it anyways, just to help testing multiple audio samples be more streamlined. Also, during the histogram section, after migrating from matlab, we learned that plotting and displaying the histograms was going to be more difficult in C++, so while trying to figure out how to do so, we took advantage of this UI to help visualize its correctness.
+    
+    \item \textbf{Correcting the Report:} While writing our report, by the end we quickly passed it through Gemini to help identify possible grammatical errors, as well as technical ones. For example, for the format of the WAV files, when listing the chunks, we failed to address that FMT chunks also included audio format, byte rate and block align.
+
+\end{enumerate}
+
+For prompting, the general strategy used included a contextualization phase, where we would give a brief context of our approach for a problem (for example, we would show the code we had for extracting the relevant data from a wav, and an empty function where we would want to create a histogram). Given the context, we would ask for a solution, as well as an explanation of the solution and sometimes, if we had difficulty, employ strategies like analogical explanations (for example, during the beginning, by comparing an audio WAV file to a package with a label, we understood better how the headers and samples worked together).

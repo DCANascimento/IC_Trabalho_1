@@ -1,0 +1,45 @@
+\chapter{Part II}
+
+For our lossless codec, AI helped us discover the working set. To do this, I had to give it access to the audio files and the codec's build folder, as well as limited access to PowerShell and the command line. The procedure was as follows:
+
+\begin{enumerate}
+    \item It saved each sequence of instructions in the script \texttt{"monitor-working-set-clss.ps1"}. It then started it from a PowerShell monitor and waited for the executions.
+
+    \item The monitor searched for the processes \texttt{wav\_lossless\_enc.exe}, \texttt{wav\_lossless\_dec.exe}, and \texttt{MyLosslessCodec} inside the build folder and recorded the PID (Process Identifier) and the timestamps.
+
+    \item For each compression or decompression operation that I started in VS Code, PowerShell read the command line associated with the process to determine the file name and the operation.
+
+    \item While each process was running, PowerShell updated the process data approximately every 10 ms and queried \texttt{PeakWorkingSet64}, which indicates the largest working set reached by the process up to that moment. To do this, while launching each CLSS process, the script recorded the process data and, at the end, placed it in the file \texttt{"working-set-clss.csv"}.
+
+    \item Finally, it saved the largest value in bytes and converted it to MiB by dividing it by 1,048,576.
+\end{enumerate}
+
+For the other codecs and compressors, however, it carried out the entire procedure. To do this, I once again gave it access to the audio files, PowerShell, and the respective codecs and compressors. In this case, it did not need access to the command line, because, in our codec, the command line was used to start the programs with the file paths. In this case, since AI started the process from PowerShell, it did not need to specify the executable and the files, since PowerShell received that command.
+
+The procedure was as follows:
+
+\begin{enumerate}
+    \item It read the 20 original WAV files in the audio folder.
+
+    \item It executed the codec and compressor programs---FLAC, WavPack, TAK, Zstd, XZ/LZMA, and CLSS---through PowerShell. To do this, the file \texttt{"benchmark-comparacao.ps1"} started the codecs and compressors, measured them, and recorded the results, logging the times, sizes, working set peaks, configurations, and fidelity checks.
+
+    \item It read each WAV file, compressed it, and decompressed it, writing the obtained data to \texttt{"benchmark-comparacao.csv"}.
+
+    \item In \texttt{"benchmark-comparacao-resumo.csv"}, it produces the aggregate summary by codec: compression ratio, times, speed, maximum working set, and the results of the fidelity checks.
+\end{enumerate}
+
+AI was a very important tool throughout the development of our lossless codec. In the first phase, we began by researching the main stages involved in lossless audio encoding and decoding. Based on this research, we identified the following workflow: for compression, reading the WAV file $\rightarrow$ prediction and calculation of the residuals $\rightarrow$ ZigZag encoding $\rightarrow$ Rice encoding; for decompression, the reverse process: reading the compressed file $\rightarrow$ Rice decoding $\rightarrow$ ZigZag decoding $\rightarrow$ reconstruction of the residuals and samples $\rightarrow$ generation of the WAV file.
+
+We sought to deepen our knowledge of each of these stages in order to understand the theoretical concepts and their practical implementation. To do this, we used various sources, including Internet searches, GitHub repositories, and technical documentation, complementing this research with requests for clarification and recommendations from AI.
+
+After a period of research and development, we managed to build our first functional version of the codec. However, when we reached question 6, we found that its performance, in terms of compression, was significantly lower than that of the other codecs analysed. To try to identify the causes of this problem, we submitted the complete code to AI and requested an analysis of the reasons why our solution produced less favourable results.
+
+The analysis allowed us to identify several limitations in the initial implementation. Firstly, we used only a first-order predictor, without exploring potentially more efficient alternatives. Furthermore, we chose a single parameter ($k$) for the entire file, instead of adapting it to the local characteristics of the signal. Finally, we applied Rice encoding to all the residuals without checking whether it was actually more advantageous than other forms of representation. In the case of stereo audio, we also did not evaluate whether the Mid/Side transformation would make it possible to reduce the amount of information required to represent the signal.
+
+Based on these observations, we introduced improvements to the codec architecture. We began dividing the audio files into blocks, allowing each block to be encoded independently. For each block, the algorithm can choose the most suitable parameter ($k$) and determine whether it is worthwhile to use Rice encoding or store the samples in uncompressed PCM. In this way, the same file can contain blocks encoded with different parameters ($k$) and can even combine compressed blocks with blocks stored without compression, depending on which option is more efficient in each case.
+
+Additionally, for stereo files, we introduced an evaluation of the Mid/Side transformation, comparing the original representation of the left and right channels with a representation based on the \textit{Mid} and \textit{Side} signals. The objective is to select the alternative that allows a more compact representation to be obtained, without loss of information.
+
+AI played a relevant role in identifying these limitations and developing the improvements implemented. Nevertheless, we tried not to limit ourselves to accepting its suggestions or copying the code it produced. We attempted to understand the function of each block, assess its suitability for the codec's operation, and verify whether the changes made sense from a theoretical and practical point of view. For this reason, much of the code was also commented on by us, both to document how it works and to make it easier to understand.
+
+In conclusion, we consider AI to have been a valuable tool for accelerating research, supporting problem-solving, and exploring possible improvements. However, its use requires critical thinking and understanding on the part of the person using it. \textbf{AI can help us find solutions, but it is up to us to understand, evaluate, and validate those solutions.}

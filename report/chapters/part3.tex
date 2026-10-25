@@ -25,7 +25,7 @@ Like how it was done for the lossless variant, before developing our lossy audio
         @{}
     }
         \toprule
-        \textbf{Codec / Compressor} & \textbf{Pros} & \textbf{Cons} \\
+        \textbf{Codecs} & \textbf{Pros} & \textbf{Cons} \\
         \midrule
 
         \textbf{MP3 (LAME)}
@@ -109,13 +109,81 @@ A model of the first implementation of the pipeline is shown in Figure \ref{fig:
   \label{fig:lossy_diagram}
 \end{figure}
 
-
 \vspace{10pt}
 \section{Model Comparison}
 
+Next came the model comparison stage, and in Table \ref{tab:lossy-codec-comparison}, we can observe the results. Our codec ended up performing drastically better in terms of memory usage than its competitors, as well as doing better decoding time. However, and most importantly, it achieves a higher SNR per bitrate, which was what we were hoping for.
 
+\begin{table}[htbp]
+    \centering
+    \caption{Comprehensive performance, memory, and quality comparison at 128 kbps}
+    \label{tab:lossy-codec-comparison}
 
+    \renewcommand{\arraystretch}{1.3}
+    \setlength{\tabcolsep}{4pt}
 
+    \begin{tabularx}{\textwidth}{
+        @{}
+        >{\raggedright\arraybackslash}p{0.22\textwidth}
+        >{\centering\arraybackslash}X
+        >{\centering\arraybackslash}X
+        >{\centering\arraybackslash}X
+        >{\centering\arraybackslash}X
+        >{\centering\arraybackslash}X
+        >{\centering\arraybackslash}X
+        @{}
+    }
+        \toprule
+        \textbf{Codec / Config} & \textbf{Enc. Time (s)} & \textbf{Dec. Time (s)} & \textbf{Enc. Mem (MB)} & \textbf{Dec. Mem (MB)} & \textbf{SNR (dB) at 128k} & \textbf{BD-Rate} \\
+        \midrule
+
+        \textbf{Ours (-b 128)} 
+        & 0.92 
+        & 0.041 
+        & 17.0 
+        & 14.1 
+        & 33.56 
+        & Baseline \\
+
+        \addlinespace
+        \midrule
+
+        \textbf{MP3 (LAME)} 
+        & 0.35 
+        & 0.061 
+        & 51.9 
+        & 52.1 
+        & 19.58 
+        & +148 \% \\
+
+        \addlinespace
+        \midrule
+
+        \textbf{AAC (FFmpeg)} 
+        & 0.45 
+        & 0.061 
+        & 52.1 
+        & 52.5 
+        & 18.63 
+        & +196 \% \\
+
+        \addlinespace
+        \midrule
+
+        \textbf{Opus} 
+        & 0.24 
+        & 0.103 
+        & 52.3 
+        & 52.0 
+        & 20.36 
+        & +215 \% \\
+
+        \bottomrule
+    \end{tabularx}
+
+    \vspace{2mm}
+    \small
+\end{table}
 
 \vspace{10pt}
 \section{Final Adjustments}
@@ -130,22 +198,13 @@ Like with the lossless encoder, we expected that block encoding might end up bei
 
 \end{enumerate}
 
-After the changes done, we observed better general results, as seen in Fig \ref{fig:rd_mpeg}, and despite the fact that raw SNR is not a completely fool proof way to measure the quality of the output, our focus was in pure audio reduction, as opposed to fully practical.
-
-\begin{figure}[H]
-\centering
-  \includegraphics[width=0.6\linewidth, height=14cm, keepaspectratio]{rd_mpeg.png}
-  \caption{Comparison between our codec and the previously mentioned models}
-  \label{fig:rd_mpeg}
-\end{figure}
-
 Comparing as well to our previous iteration, the implementation of a k variable that is context-adaptive, instead of globally set, helped optimize bit allocation across varying coefficient magnitudes, preventing wasted capacity on small high-frequency values and significantly reducing cumulative bit consumption.
 
 The example in Fig \ref{fig:rice_k_profile} shows a range of frequency coefficients, alongside the resulting k parameter selection and cumulative bit consumption for both versions of the codec.
 
 \begin{figure}[H]
 \centering
-  \includegraphics[width=1\linewidth, height=14cm, keepaspectratio]{rice_k_profile.png}
+  \includegraphics[width=1\linewidth, height=10cm, keepaspectratio]{rice_k_profile.png}
   \caption{Rice parameter methodology evaluation between codec versions}
   \label{fig:rice_k_profile}
 \end{figure}

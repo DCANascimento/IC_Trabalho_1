@@ -33,47 +33,87 @@ cd Project
 make
 \end{verbatim}
 
-After the build completes successfully, the following executables
-should be available in the \texttt{Project} directory:
+After the build completes successfully, the executables
+should be available in the \texttt{Project} director, to run the executables as follows:
 
-\begin{itemize}
-    \item \texttt{wav\_app}
-    \item \texttt{wav\_cmp}
-    \item \texttt{wav\_effects}
-    \item \texttt{wav\_hist}
-    \item \texttt{wav\_quant}
-\end{itemize}
-
-\section{Running the Executables}
-
-While in the \texttt{Project} directory, run the executables as follows:
-
-\begin{itemize}
-    \item \textbf{Histogram:}
-    \begin{verbatim}
+\begin{verbatim}
+// WAV Histograms
 ./wav_hist input.wav
-    \end{verbatim}
-    
 
-    \item \textbf{Quantization:}
-    \begin{verbatim}
+// WAV Quantization
 ./wav_quant input.wav output.wav --bits n
-    \end{verbatim}
 
-
-    \item \textbf{Comparison:}
-    \begin{verbatim}
+// WAV Comparison
 ./wav_cmp input.wav input_quantized.wav
-    \end{verbatim}
 
-
-    \item \textbf{Audio effects:}
-    \begin{verbatim}
+// WAV Audio Effects
 ./wav_effects
-    \end{verbatim}
-
-
-\end{itemize}
+\end{verbatim}
 
 
 \section{Using the Codecs}
+
+\subsection{Lossless Audio Codec}
+
+For the lossless codec, first extract the zip file "LosslessCodec\_FINAL.zip". Inside of it, use the following commands to build and run the program:
+
+\begin{verbatim}
+cmake -S . -B build-user
+cmake --build build-user --config Release
+\end{verbatim}
+
+This creates the encoder and decoder, which can be tested using:
+
+\begin{verbatim}
+// Encoder
+./build-user/wav_lossless_enc input.wav compressed.clss
+
+// Decoder
+./build-user/wav_lossless_dec compressed.clss restored.wav
+\end{verbatim}
+
+
+\subsection{Lossy Audio Codec}
+
+To run the lossy codec, simply go to the "lossy" folder, build the lossy codec using the cmake file and test the program. From the root, the commands are as follows:
+
+\begin{verbatim}
+cd lossy
+cmake -S . -B build
+cmake --build build
+\end{verbatim}
+
+This will create the encoder, decoder, and an auxiliary file to compare the original file with the compressed version. To then run the program use:
+
+\begin{verbatim}
+// Encoder
+./build/wav_lossy_enc [options] input.wav compressed_file
+
+// Decoder
+./build/wav_lossy_dec compressed_file output.wav
+
+// Comparator
+./build/wav_snr original.wav decoded.wav
+\end{verbatim}
+
+For the encoder, the options that can be run include:
+
+\begin{itemize}
+
+    \item \textbf{-q <step> | } to set a quantization step (>= 0.01);
+    
+    \item \textbf{-b <kbps> | } to set a target bitrate;
+    
+    \item \textbf{-n <size> | } to set a block size;
+    
+    \item \textbf{-t <type> | } to choose between "mdct" or "dct" transform;
+    
+    \item \textbf{-z <r> | } to set the value for quantizer rounding;
+    
+    \item \textbf{--no-centroid | } to decode at the middle of each interval;
+
+    \item \textbf{--no-ms | } for stereo, to code using L/R, instead of MID/SIDE
+    
+    \item \textbf{-v | } to print statistics in the end.
+
+\end{itemize}

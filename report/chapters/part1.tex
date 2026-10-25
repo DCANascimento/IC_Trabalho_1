@@ -27,7 +27,7 @@ In the first step, we immediately encountered a major difference between matlab 
 
     \item \textbf{RIFF:} Identifying by the RIFF header lets us extract the size of the file. The header is a 12 byte array where the first 4 bytes represent its RIFF ID, the next four are the file size, and the last 4 are a WAVE ID. This wouldn't be used now, but would be useful for the later codecs.
 
-    \item \textbf{FMT:} The FMT chunk is the first important part, since it gives us important metadata such as the number of channels, the sample rate and the bits per sample (to ensure its 16-bit).
+    \item \textbf{FMT:} The FMT chunk is the first important part, since it gives us important metadata such as the number of channels, the sample rate, the bits per sample (to ensure its 16-bit), the audio format (which we assumed by default would be PCM), the byte rate and block align.
     
     \item \textbf{DATA:} The data chunk tells us the total size of the data. With it we can calculate the total number of samples, and allocate memory accordingly. It is also in it that we have the actual PCM audio samples that we will work with.
 
