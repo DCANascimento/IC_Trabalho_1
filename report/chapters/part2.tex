@@ -241,11 +241,11 @@ Given our obtained results, we decided on some changes that could potentially im
 
 \begin{enumerate}
 
-    \item \textbf{Block encoding:} Before, we would apply the whole enconding strategy to the entire sample field, all with the same parameters. Now, we have decided to split the samples into blocks, and each block 
-
     \item \textbf{MID/SIDE channels:} By taking the difference between the left and right channels (assuming stereo), as well as the average of the two, we can potentially obtain smaller values to the original ones, increasing compression rate. However, like with Rice encoding, if the resulting values are larger, we can choose to keep the originals.
     
     \item \textbf{Predictor adjustment:} By using a second order predictor, as opposed to first order, we can model smooth waveforms by tracking signal trends and slopes rather than assuming a flat line, resulting in significantly smaller residuals and improved compression efficiency
+        
+    \item \textbf{Block encoding:} Before, we would apply the whole enconding strategy to the entire sample field, all with the same parameters. Now, we have decided to split the samples into blocks, and each block now has its own compression parameters. So each block can either have L/R or MID/SIDE transformation, choose between first or second order predictor, define a favorable k variable for rice encoding, and decide whether to do said encoding or keep the raw PCM samples (for all of these, each block is tested at runtime and the best result is chosen)
 
 \end{enumerate}
 
@@ -285,7 +285,7 @@ After these changes were applied, we observed a significant improvement in the g
         \midrule
 
         \textbf{Original Size}
-        & 5,176,752 bytes
+        & 5,176,796 bytes
         & 5,176,796 bytes \\
 
         \addlinespace

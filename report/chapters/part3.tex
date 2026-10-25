@@ -87,13 +87,13 @@ Like how it was done for the lossless variant, before developing our lossy audio
 Similarly to the previous codec, this one was split into:
 
 \begin{itemize}
-    \item \textbf{codec.cpp} orchestrates the entire compression and decompression pipeline. It handles WAV reading, coordinates the MDCT/DCT transforms, applies MID/SIDE stereo rotation, manages deadzone quantization with centroid tracking, executes rate control via binary search, and packs/unpacks the file headers containing the `LSY6` magic tag, block size, step, and reconstruction offsets.
+    \item \textbf{codec.cpp} orchestrates the entire compression and decompression pipeline. It handles WAV reading, coordinates the MDCT/DCT transforms, manages quantization, executes rate control via binary search, and packs/unpacks the file headers containing the `LSY6` magic tag, block size, step, and reconstruction offsets.
     
     \item \textbf{transform.cpp} implements the mathematical core of the codec. It applies the sine window, handles block overlapping, and computes the MDCT/DCT efficiently by folding the input into a DCT-IV using an internal FFT.
     
     \item \textbf{zigzag.cpp}, like in the previous codec, maps signed quantized integers into unsigned integers. This transformation groups small numbers together, preparing them for more efficient entropy coding later on.
     
-    \item \textbf{rice.cpp} handles Rice coding and features an adaptive context predictor. Instead of storing a global k value, it looks at 8 neighboring coefficients (from the current and previous blocks) to dynamically predict the optimal Rice parameter k on the fly for every single coefficient with zero metadata overhead.
+    \item \textbf{rice.cpp} handles Rice coding and features an adaptive context predictor. Later on, instead of storing a global k value, it wpuld look at 8 neighboring coefficients (from the current and previous blocks) to dynamically predict the optimal Rice parameter k on the fly for every single coefficient with zero metadata overhead. But at the first implementation, this value was static.
     
     \item \textbf{bitstream.cpp} provides low-level bit manipulation via `BitWriter` and `BitReader`. It packs variable-length Rice codes, the `last` non-zero position markers, and stereo Mid/Side flags tightly into the output byte stream.
     
