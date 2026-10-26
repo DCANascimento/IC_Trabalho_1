@@ -22,7 +22,7 @@ Project/          C/C++ implementation
   programs/       Command-line programs
   gui/            GTK4 graphical interface
   makefile
-LosslessCodec_FINAL.zip       Part II: lossless audio codec (C++17, CMake)
+LosslessCodec_Final_version/  Part II: lossless audio codec (C++17, CMake) — see its README.md
 lossy/            Part III: lossy audio codec (C++17, CMake) — see lossy/README.md
   src/            codec and programs
   tools/          test, measurement and comparison scripts

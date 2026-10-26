@@ -1,0 +1,6 @@
+# Build output and local data (not in the repository)
+build/
+build-user/
+Audio_Datasets/
+Audio_Datasets_comprimidos/
+.vscode/
