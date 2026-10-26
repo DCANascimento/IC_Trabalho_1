@@ -139,7 +139,7 @@ This part of the work was split into a few submodules:
     \item \textbf{format.cpp} grabs the data prepared by the bistream, and writes out the CLSS file. It also contains the logic for the reading of the CLSS.
 \end{itemize}
 
-Below, in Fig. \ref{fig:lossless_diagram}, is a diagram we made for clarity. Later into development, the predictor logic, as well as the method handling of the \texttt{zigzag.cpp} and the \texttt{rice.cpp} we moved to a singular \texttt{block\_codec.cpp} file. In short, the compression and decompression code process can be described with the following sequences:
+Below, in Fig. \ref{fig:lossless_diagram}, is a diagram we made for clarity. Later into development, the prediction logic was moved to the \texttt{block\_codec.cpp} file, and the \texttt{zigzag.cpp} and \texttt{rice.cpp} files were called from \texttt{block\_codec.cpp}. In short, the compression and decompression code process can be described with the following sequences:
 
 \paragraph{Compression pipeline:}
 \[
