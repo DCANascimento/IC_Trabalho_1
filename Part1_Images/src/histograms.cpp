@@ -114,7 +114,7 @@ int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::str
 
 int raw16_histogram(std::vector<uint16_t> pixels, int bin_width, std::string file_name) {
 
-    int vector_length = 65535 / bin_width;
+    int vector_length = (65535 / bin_width) + 1;
 
     std::vector<int> hist_counts(vector_length, 0);
 
@@ -123,8 +123,9 @@ int raw16_histogram(std::vector<uint16_t> pixels, int bin_width, std::string fil
     }
 
 
-    if (plot_histogram(hist_counts, file_name, "_raw16", bin_width) ) {
+    if (plot_histogram(hist_counts, file_name, "raw16", bin_width) ) {
         std::cerr << "Error creating the svg file\n";
+        return 1;
     }
 
 

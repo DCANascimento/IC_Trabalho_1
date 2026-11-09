@@ -7,7 +7,7 @@
 
 std::vector<uint16_t> read_raw16(std::string file_name) {
 
-    std::string filename = "imgs-raw16/ERIS.2024-01-01T06_15_12.592_u16be-1x2046x2048.raw";
+    std::string filename = "../ImageFiles/imgs-raw16/ERIS.2024-01-01T06_15_12.592_u16be-1x2046x2048.raw";
 
     int width = 2048;
     int height = 2046;
