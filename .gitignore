@@ -38,3 +38,6 @@ results/raw/
 # ---- OS / editors ----
 .DS_Store
 Thumbs.db
+
+# ---- Editor settings (personal) ----
+.vscode/
