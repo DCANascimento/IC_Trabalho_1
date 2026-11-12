@@ -7,8 +7,10 @@
 
 std::vector<uint16_t> read_raw16(std::string file_name) {
 
+    std::string full_path_file = "../datasets/imgs-raw16/" + file_name;
+
     // opens the file in the end, to count the total size
-    std::ifstream file(file_name, std::ios::binary | std::ios::ate);
+    std::ifstream file(full_path_file, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
         throw std::runtime_error("Could not open file");
     }
@@ -32,8 +34,10 @@ std::vector<uint16_t> read_raw16(std::string file_name) {
 
 std::vector<uint8_t> read_pgm8(std::string file_name) {
 
+    std::string full_path_file = "../datasets/imgs-pgm8/" + file_name;
+
     // opens the file in the end, to count the total size
-    std::ifstream file(file_name, std::ios::binary | std::ios::ate);
+    std::ifstream file(full_path_file, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
         throw std::runtime_error("Could not open file");
     }
@@ -102,3 +106,7 @@ std::vector<uint8_t> read_pgm8(std::string file_name) {
     return pixels;
 
 }
+
+
+
+

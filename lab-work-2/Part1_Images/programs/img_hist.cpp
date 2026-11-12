@@ -26,6 +26,9 @@ int main(int argc, char **argv) {
         std::vector<uint8_t> pixels = read_pgm8(file_name);
 
         // histogram logic
+        if (pgm8_histogram(pixels, bin_width, file_name)) {
+            return 1;
+        }
 
     } else if (file_type.compare(".ppm") == 0) {
 
@@ -37,5 +40,6 @@ int main(int argc, char **argv) {
     }
 
 
+    return 0;
 
 }

@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <filesystem>
 
-int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::string file_type, int bin_width) {
+int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::string file_type, int bin_width, int max_pixel_value) {
 
     std::string dir_name = "Histograms";
     std::filesystem::create_directories(dir_name);
@@ -39,14 +39,14 @@ int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::str
         }
     }
 
-    int num_bins = (65535 + 1) / bin_width;
+    int num_bins = hist_counts.size();
 
     // SVG Writer
     file << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" << width << "\" height=\"" << height << "\">\n";
     file << "  <rect width=\"100%\" height=\"100%\" fill=\"#ffffff\"/>\n";
     
     // Title
-    file << "  <text x=\"" << width / 2 << "\" y=\"25\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"16\" font-weight=\"bold\" fill=\"#333\">Raw 16-bit Image Histogram</text>\n";
+    file << "  <text x=\"" << width / 2 << "\" y=\"25\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"16\" font-weight=\"bold\" fill=\"#333\">Image Histogram</text>\n";
 
     // X-Axis line
     file << "  <line x1=\"" << margin_left << "\" y1=\"" << (height - margin_bottom) 
@@ -57,7 +57,7 @@ int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::str
          << "\" x2=\"" << margin_left << "\" y2=\"" << (height - margin_bottom) 
          << "\" stroke=\"#333\" stroke-width=\"1.5\"/>\n";
 
-    // Lines and Labels
+    // Y Lines and Labels
     int num_y_ticks = 5;
     for (int i = 0; i <= num_y_ticks; ++i) {
         double val = static_cast<double>(max_count * i) / num_y_ticks;
@@ -72,10 +72,11 @@ int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::str
              << "\" text-anchor=\"end\" font-family=\"Arial\" font-size=\"11\" fill=\"#666\">" << static_cast<long>(val) << "</text>\n";
     }
 
-    int num_x_ticks = 5; // Split the 16-bit range into 5 clean steps
+    // X-Axis Ticks and Labels (dynamic based on max_pixel_value)
+    int num_x_ticks = 5; 
     for (int i = 0; i <= num_x_ticks; ++i) {
-        double pixel_val = (65535.0 / num_x_ticks) * i;
-        int x_pos = margin_left + static_cast<int>((pixel_val / 65535.0) * plot_width);
+        double pixel_val = (static_cast<double>(max_pixel_value) / num_x_ticks) * i;
+        int x_pos = margin_left + static_cast<int>((pixel_val / max_pixel_value) * plot_width);
 
         // Tick mark
         file << "  <line x1=\"" << x_pos << "\" y1=\"" << (height - margin_bottom) 
@@ -87,7 +88,7 @@ int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::str
              << "\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"10\" fill=\"#666\">" << static_cast<int>(pixel_val) << "</text>\n";
     }
 
-    // Draw histogram
+    // Draw histogram bars
     double bin_width_px = static_cast<double>(plot_width) / num_bins;
     for (int i = 0; i < num_bins; ++i) {
         double bar_h = (static_cast<double>(hist_counts[i]) / max_count) * plot_height;
@@ -99,9 +100,9 @@ int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::str
              << "\" height=\"" << bar_h << "\" fill=\"#0064ff\" opacity=\"0.85\"/>\n";
     }
 
-    // Title
+    // Bottom Axis Title (Dynamic Range)
     file << "  <text x=\"" << (margin_left + plot_width / 2) << "\" y=\"" << (height - 15) 
-         << "\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"#333\">Pixel Intensity (0 - 65535)</text>\n";
+         << "\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"#333\">Pixel Intensity (0 - " << max_pixel_value << ")</text>\n";
     
     file << "</svg>\n";
     file.close();
@@ -113,22 +114,39 @@ int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::str
 
 
 int raw16_histogram(std::vector<uint16_t> pixels, int bin_width, std::string file_name) {
-
-    int vector_length = (65535 / bin_width) + 1;
+    int max_val = 65535;
+    int vector_length = (max_val / bin_width) + 1;
 
     std::vector<int> hist_counts(vector_length, 0);
 
     for (uint16_t pixel : pixels) {
-        hist_counts[pixel / bin_width]++;
+        if (pixel <= max_val) {
+            hist_counts[pixel / bin_width]++;
+        }
     }
 
-
-    if (plot_histogram(hist_counts, file_name, "raw16", bin_width) ) {
+    if (plot_histogram(hist_counts, file_name, "raw16", bin_width, max_val)) {
         std::cerr << "Error creating the svg file\n";
         return 1;
     }
 
+    return 0;
+}
+
+int pgm8_histogram(std::vector<uint8_t> pixels, int bin_width, std::string file_name) {
+    int max_val = 255;
+    int vector_length = (max_val / bin_width) + 1;
+
+    std::vector<int> hist_counts(vector_length, 0);
+
+    for (uint8_t pixel : pixels) {
+        hist_counts[pixel / bin_width]++;
+    }
+
+    if (plot_histogram(hist_counts, file_name, "pgm8", bin_width, max_val)) {
+        std::cerr << "Error creating the svg file\n";
+        return 1;
+    }
 
     return 0;
-
 }
