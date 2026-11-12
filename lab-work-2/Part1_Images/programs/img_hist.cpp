@@ -25,14 +25,17 @@ int main(int argc, char **argv) {
 
         std::vector<uint8_t> pixels = read_pgm8(file_name);
 
-        // histogram logic
         if (pgm8_histogram(pixels, bin_width, file_name)) {
             return 1;
         }
 
     } else if (file_type.compare(".ppm") == 0) {
 
-        std::cout << "its was a ppm\n";
+        std::vector<uint8_t> pixels = read_ppm(file_name);
+
+        if (ppm_histogram(pixels, bin_width, file_name)) {
+            return 1;
+        }
 
     } else {
         std::cerr << "Improper input file (must be .raw .pgm or .ppm)\n";

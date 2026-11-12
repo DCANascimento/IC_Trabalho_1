@@ -108,5 +108,68 @@ std::vector<uint8_t> read_pgm8(std::string file_name) {
 }
 
 
+std::vector<uint8_t> read_ppm(std::string file_name) {
 
+    std::string full_path_file = "../datasets/imgs-ppm/" + file_name;
+
+    std::ifstream file(full_path_file, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open file");
+    }
+
+    // Skips P6, similar to pgm
+    file.seekg(3, std::ios::beg);
+
+    int width;
+    int height;
+
+    int width_done = 0;
+
+    char full_buffer[50];
+    char buffer;
+    int count = 0;
+
+    while (file.read(&buffer, sizeof(char))) {
+
+        if (static_cast<int>(buffer) == 32 || static_cast<int>(buffer) == 10) {
+
+            if (width_done) {
+                height = atoi(full_buffer);
+                break;
+            } else {
+                width = atoi(full_buffer);
+                
+                for (int i = 0; i < count; i++) {
+                    full_buffer[i] = 48;
+                }
+
+                width_done = 1;
+            }
+            count = 0;
+
+        } else {
+            full_buffer[count++] = buffer;
+        }
+
+    }
+
+    int total_pixels = width * height;
+
+    // * 3 because of the RGB
+    std::vector<uint8_t> pixels(total_pixels * 3);
+
+    std::cout << "total pixels: " << total_pixels << "\n";
+
+    // Skip 255 gray scale thing
+    file.read(&full_buffer[0], sizeof(char) * 4);
+
+    if (!file.read(reinterpret_cast<char*>(pixels.data()), (total_pixels * 3 * sizeof(uint8_t)))) {
+        throw std::runtime_error("Failed to read from file");
+    }
+
+    file.close();
+
+    return pixels;
+
+}
 

@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <filesystem>
 
-int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::string file_type, int bin_width, int max_pixel_value) {
+int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::string file_type, int bin_width, int max_value) {
 
     std::string dir_name = "Histograms";
     std::filesystem::create_directories(dir_name);
@@ -39,18 +39,30 @@ int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::str
         }
     }
 
-    int num_bins = hist_counts.size();
+    int num_bins = (max_value + 1) / bin_width;
 
     // SVG Writer
     file << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" << width << "\" height=\"" << height << "\">\n";
     file << "  <rect width=\"100%\" height=\"100%\" fill=\"#ffffff\"/>\n";
     
     // Title
-    file << "  <text x=\"" << width / 2 << "\" y=\"25\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"16\" font-weight=\"bold\" fill=\"#333\">Image Histogram</text>\n";
+    file << "  <text x=\"" << width / 2 << "\" y=\"25\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"16\" font-weight=\"bold\" fill=\"#333\">";
+    if (file_type.compare("raw16") == 0) {
+        file << "Raw16 Image Histogram</text>\n";
+    } else if (file_type.compare("pgm8") == 0) {
+        file << "Raw16 Image Histogram</text>\n";
+    } else if (file_type.compare("ppm_R") == 0) {
+        file << "PPM Image Histogram (Red)</text>\n";
+    } else if (file_type.compare("ppm_G") == 0) {
+        file << "PPM Image Histogram (Green)</text>\n";
+    } else if (file_type.compare("ppm_B") == 0) {
+        file << "PPM Image Histogram (Blue)</text>\n";
+    }
+
 
     // X-Axis line
     file << "  <line x1=\"" << margin_left << "\" y1=\"" << (height - margin_bottom) 
-         << "\" x2=\"" << (width - margin_right) << "\" y2=\"" << (height - margin_bottom) 
+         << "\" x2=\"" << (width - margin_right) << "\" y2=\"" << (height - margin_bottom)
          << "\" stroke=\"#333\" stroke-width=\"1.5\"/>\n";
     // Y-Axis line
     file << "  <line x1=\"" << margin_left << "\" y1=\"" << margin_top 
@@ -72,11 +84,10 @@ int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::str
              << "\" text-anchor=\"end\" font-family=\"Arial\" font-size=\"11\" fill=\"#666\">" << static_cast<long>(val) << "</text>\n";
     }
 
-    // X-Axis Ticks and Labels (dynamic based on max_pixel_value)
-    int num_x_ticks = 5; 
+    int num_x_ticks = 5; // Split the 16-bit range into 5 clean steps
     for (int i = 0; i <= num_x_ticks; ++i) {
-        double pixel_val = (static_cast<double>(max_pixel_value) / num_x_ticks) * i;
-        int x_pos = margin_left + static_cast<int>((pixel_val / max_pixel_value) * plot_width);
+        double pixel_val = (max_value / num_x_ticks) * i;
+        int x_pos = margin_left + static_cast<int>((pixel_val / max_value) * plot_width);
 
         // Tick mark
         file << "  <line x1=\"" << x_pos << "\" y1=\"" << (height - margin_bottom) 
@@ -88,7 +99,7 @@ int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::str
              << "\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"10\" fill=\"#666\">" << static_cast<int>(pixel_val) << "</text>\n";
     }
 
-    // Draw histogram bars
+    // Draw histogram
     double bin_width_px = static_cast<double>(plot_width) / num_bins;
     for (int i = 0; i < num_bins; ++i) {
         double bar_h = (static_cast<double>(hist_counts[i]) / max_count) * plot_height;
@@ -97,12 +108,25 @@ int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::str
 
         file << "  <rect x=\"" << x_pos << "\" y=\"" << y_pos 
              << "\" width=\"" << std::max(1.0, bin_width_px - 0.5) 
-             << "\" height=\"" << bar_h << "\" fill=\"#0064ff\" opacity=\"0.85\"/>\n";
+             << "\" height=\"" << bar_h << "\" fill=\"";
+
+
+        if (file_type.compare("raw16") == 0) {
+            file << "#0064ff\" opacity=\"0.85\"/>\n";
+        } else if (file_type.compare("pgm8") == 0) {
+            file << "#0064ff\" opacity=\"0.85\"/>\n";
+        } else if (file_type.compare("ppm_R") == 0) {
+            file << "#ff0000\" opacity=\"0.85\"/>\n";
+        } else if (file_type.compare("ppm_G") == 0) {
+            file << "#00ff00\" opacity=\"0.85\"/>\n";
+        } else if (file_type.compare("ppm_B") == 0) {
+            file << "#0000ff\" opacity=\"0.85\"/>\n";
+        }
     }
 
-    // Bottom Axis Title (Dynamic Range)
+    // Title
     file << "  <text x=\"" << (margin_left + plot_width / 2) << "\" y=\"" << (height - 15) 
-         << "\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"#333\">Pixel Intensity (0 - " << max_pixel_value << ")</text>\n";
+         << "\" text-anchor=\"middle\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\" fill=\"#333\">Pixel Intensity (0 - max_value)</text>\n";
     
     file << "</svg>\n";
     file.close();
@@ -114,39 +138,82 @@ int plot_histogram(std::vector<int> hist_counts, std::string file_name, std::str
 
 
 int raw16_histogram(std::vector<uint16_t> pixels, int bin_width, std::string file_name) {
-    int max_val = 65535;
-    int vector_length = (max_val / bin_width) + 1;
+
+    int max_value = 65535;
+
+    int vector_length = (max_value / bin_width) + 1;
 
     std::vector<int> hist_counts(vector_length, 0);
 
     for (uint16_t pixel : pixels) {
-        if (pixel <= max_val) {
-            hist_counts[pixel / bin_width]++;
-        }
-    }
-
-    if (plot_histogram(hist_counts, file_name, "raw16", bin_width, max_val)) {
-        std::cerr << "Error creating the svg file\n";
-        return 1;
-    }
-
-    return 0;
-}
-
-int pgm8_histogram(std::vector<uint8_t> pixels, int bin_width, std::string file_name) {
-    int max_val = 255;
-    int vector_length = (max_val / bin_width) + 1;
-
-    std::vector<int> hist_counts(vector_length, 0);
-
-    for (uint8_t pixel : pixels) {
         hist_counts[pixel / bin_width]++;
     }
 
-    if (plot_histogram(hist_counts, file_name, "pgm8", bin_width, max_val)) {
+
+    if (plot_histogram(hist_counts, file_name, "raw16", bin_width, max_value) ) {
+        std::cerr << "Error creating the svg file\n";
+        return 1;
+    }
+
+
+    return 0;
+
+}
+
+int pgm8_histogram(std::vector<uint8_t> pixels, int bin_width, std::string file_name) {
+
+    int max_value = 255;
+
+    int vector_length = (max_value / bin_width) + 1;
+
+    std::vector<int> hist_counts(vector_length, 0);
+
+    for (uint16_t pixel : pixels) {
+        hist_counts[pixel / bin_width]++;
+    }
+
+
+    if (plot_histogram(hist_counts, file_name, "pgm8", bin_width, max_value) ) {
         std::cerr << "Error creating the svg file\n";
         return 1;
     }
 
     return 0;
+
+}
+
+int ppm_histogram(std::vector<uint8_t> pixels, int bin_width, std::string file_name) {
+
+    int max_value = 255;
+
+    int vector_length = (max_value / bin_width) + 1;
+
+    std::vector<int> hist_counts_R(vector_length, 0);
+    std::vector<int> hist_counts_G(vector_length, 0);
+    std::vector<int> hist_counts_B(vector_length, 0);
+
+    // going in groups of 3 since its RGB
+    for (int i = 0; i < (static_cast<int>(pixels.size())); i = i + 3) {
+        hist_counts_R[pixels[i] / bin_width]++;
+        hist_counts_G[pixels[i + 1] / bin_width]++;
+        hist_counts_B[pixels[i + 2] / bin_width]++;
+    }
+
+    if (plot_histogram(hist_counts_R, file_name, "ppm_R", bin_width, max_value) ) {
+        std::cerr << "Error creating the svg file\n";
+        return 1;
+    }
+
+    if (plot_histogram(hist_counts_G, file_name, "ppm_G", bin_width, max_value) ) {
+        std::cerr << "Error creating the svg file\n";
+        return 1;
+    }
+
+    if (plot_histogram(hist_counts_B, file_name, "ppm_B", bin_width, max_value) ) {
+        std::cerr << "Error creating the svg file\n";
+        return 1;
+    }
+
+    return 0;
+
 }
