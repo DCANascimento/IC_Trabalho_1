@@ -1,0 +1,35 @@
+% Figure: rate-distortion curves (mean SNR against mean bitrate) of our codec,
+% MP3, AAC and Opus. Reads the CSV written by compare_mpeg.sh, given in \csvfile:
+%   pdflatex "\def\csvfile{path/rd_average.csv}\input{compare_mpeg.tex}"
+% (tools/compare_mpeg.sh does this and saves the PDF as results/mpeg/rd_mpeg.pdf).
+\documentclass[border=4pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\pgfplotsset{compat=1.17}
+
+\providecommand{\csvfile}{rd_average.csv}
+
+\begin{document}
+\begin{tikzpicture}
+\pgfplotstableread[col sep=comma]{\csvfile}\rd
+\begin{axis}[
+    width=12cm, height=8cm,
+    xmode=log, log basis x=2,
+    xtick={32,64,128,256}, xticklabels={32,64,128,256},
+    xlabel={bitrate (kbps)}, ylabel={SNR (dB)},
+    grid=major, grid style={gray!20},
+    legend pos=north west, legend style={font=\footnotesize},
+    tick label style={font=\footnotesize}, label style={font=\small},
+]
+\addplot[very thick, blue!70!black, mark=*] table[x=ours_kbps, y=ours_snr]{\rd};
+\addlegendentry{ours (v2)}
+\addplot[thick, red!80!black, mark=square*] table[x=mp3_kbps, y=mp3_snr]{\rd};
+\addlegendentry{MP3 (LAME)}
+\addplot[thick, orange!90!black, mark=triangle*] table[x=aac_kbps, y=aac_snr]{\rd};
+\addlegendentry{AAC (FFmpeg)}
+\addplot[thick, green!50!black, mark=diamond*] table[x=opus_kbps, y=opus_snr]{\rd};
+\addlegendentry{Opus}
+\end{axis}
+\end{tikzpicture}
+\end{document}

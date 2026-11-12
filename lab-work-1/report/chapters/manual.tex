@@ -1,0 +1,128 @@
+\chapter{Manual - How to Run}
+
+This project was developed for Ubuntu/Debian-based systems.
+Before running any scripts, ensure that the following dependencies
+are installed:
+
+\begin{itemize}
+    \item \texttt{gcc} / \texttt{g++} (C11 and C++17 support)
+    \item \texttt{make} and \texttt{pkg-config}
+    \item GTK4 (\texttt{libgtk-4-dev}), required only for the graphical interface
+    \item At least one audio player: \texttt{paplay} or \texttt{aplay}
+    for GUI and terminal playback; \texttt{ffplay} is an additional
+    fallback for the GUI
+    \item MATLAB, required only for the \texttt{.m} prototypes
+    \item \texttt{cmake} >= 3.20, only for the lossy codec (Part III)
+    \item \texttt{python3}, only for the lossy codec's test and measurement scripts
+\end{itemize}
+
+Most of the required dependencies can be installed using the following
+command:
+
+\begin{verbatim}
+sudo apt update
+sudo apt install build-essential make pkg-config libgtk-4-dev \
+    pulseaudio-utils alsa-utils ffmpeg
+\end{verbatim}
+
+\section{Building the Project}
+
+To build the exercises in Part 1, open a terminal in the project's
+root directory and run the following commands:
+
+\begin{verbatim}
+cd Project
+make
+\end{verbatim}
+
+After the build completes successfully, the executables
+should be available in the \texttt{Project} director, to run the executables as follows:
+
+\begin{verbatim}
+// WAV Histograms
+./wav_hist input.wav
+
+// WAV Quantization
+./wav_quant input.wav output.wav --bits n
+
+// WAV Comparison
+./wav_cmp input.wav input_quantized.wav
+
+// WAV Audio Effects
+./wav_effects
+\end{verbatim}
+
+
+\section{Using the Codecs}
+
+\subsection{Lossless Audio Codec}
+
+For the lossless codec, go to the \texttt{LosslessCodec\_Final\_version} folder. Inside of it, use the following commands to build and run the program:
+
+\begin{verbatim}
+cmake -S . -B build-user
+cmake --build build-user --config Release
+\end{verbatim}
+
+This creates the encoder and decoder, which can be tested using:
+
+\begin{verbatim}
+// Encoder
+./build-user/wav_lossless_enc input.wav compressed.clss
+
+// Decoder
+./build-user/wav_lossless_dec compressed.clss restored.wav
+\end{verbatim}
+
+\noindent\textit{Note:} For the final version of the codec, the zip file may need to be extracted using \texttt{git lfs}. For that, run these commands:
+
+\begin{verbatim}
+git lfs install
+git lfs pull
+\end{verbatim}
+
+
+\subsection{Lossy Audio Codec}
+
+To run the lossy codec, simply go to the "lossy" folder, build the lossy codec using the cmake file and test the program. From the root, the commands are as follows:
+
+\begin{verbatim}
+cd lossy
+cmake -S . -B build
+cmake --build build
+\end{verbatim}
+
+This will create the encoder, decoder, and an auxiliary file to compare the original file with the compressed version. To then run the program use:
+
+\begin{verbatim}
+// Encoder
+./build/wav_lossy_enc [options] input.wav compressed_file
+
+// Decoder
+./build/wav_lossy_dec compressed_file output.wav
+
+// Comparator
+./build/wav_snr original.wav decoded.wav
+\end{verbatim}
+
+For the encoder, the options that can be run include:
+
+\begin{itemize}
+
+    \item \textbf{-q <step> | } to set a quantization step (>= 0.01);
+    
+    \item \textbf{-b <kbps> | } to set a target bitrate;
+    
+    \item \textbf{-n <size> | } to set a block size;
+    
+    \item \textbf{-t <type> | } to choose between "mdct" or "dct" transform;
+    
+    \item \textbf{-z <r> | } to set the value for quantizer rounding;
+    
+    \item \textbf{-{}-no-centroid | } to decode at the middle of each interval;
+
+    \item \textbf{-{}-no-ms | } for stereo, to code using L/R, instead of MID/SIDE
+    
+    \item \textbf{-v | } to print statistics in the end.
+
+\end{itemize}
